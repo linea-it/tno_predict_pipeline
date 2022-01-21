@@ -123,7 +123,7 @@ class AsteroidExternalInputs():
             t1 = datetime.now(tz=timezone.utc)
             tdelta = t1 - t0
 
-            self.log.info("BSP Downloaded in %s" % tdelta)
+            self.log.info("Asteroid [%s] BSP Downloaded in %s" % self.name, tdelta)
 
             data = dict({
                 'source': 'JPL',

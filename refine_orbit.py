@@ -16,6 +16,7 @@ import configparser
 from condor import Condor
 import pandas as pd
 import random
+from asteroid import Asteroid
 
 from library import (
     get_logger,
@@ -198,8 +199,6 @@ try:
 
     # Lista de Jobs do Condor.
     htc_jobs = list()
-
-    from asteroid import Asteroid
 
     current_idx = 1
     # for asteroid in asteroids[0:10]:
