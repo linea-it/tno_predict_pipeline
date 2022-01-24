@@ -1,1 +1,40 @@
-{"id": 1, "status": "Failed", "submit_time": null, "start": "2022-01-21T19:26:35.901434+00:00", "end": "2022-01-21T19:26:40.190696+00:00", "exec_time": 4.289262, "estimated_execution_time": 0.0, "path": "/archive/des/tno/dev/nima/pipeline/examples/orbit_trace_job", "bsp_planetary": {"name": "de435", "filename": "de435.bsp", "absolute_path": "/archive/des/tno/dev/bsp_planetary/de435.bsp"}, "leap_seconds": {"name": "naif0012", "filename": "naif0012.tls", "absolute_path": "/archive/des/tno/dev/leap_seconds/naif0012.tls"}, "period": ["2012-11-01", "2019-02-01"], "observatory_location": [289.193583333, -30.16958333, 2202.7], "match_radius": 2, "expected_asteroids": 0, "processed_asteroids": 1, "filter_type": "name", "filter_value": "Eris", "count_asteroids": 1, "count_ccds": 21, "count_observations": 0, "time_profile": [{"step": "retrieve_asteroids", "start": "2022-01-21T16:55:31.361847+00:00", "end": "2022-01-21T16:55:32.305368+00:00", "exec_time": 0.943521}, {"step": "retrieve_asteroids", "start": "2022-01-21T17:03:54.954692+00:00", "end": "2022-01-21T17:03:55.107900+00:00", "exec_time": 0.153208}, {"step": "retrieve_asteroids", "start": "2022-01-21T17:41:07.927355+00:00", "end": "2022-01-21T17:41:08.069707+00:00", "exec_time": 0.142352}, {"step": "retrieve_ccds", "start": "2022-01-21T17:41:08.167933+00:00", "end": "2022-01-21T17:41:10.501325+00:00", "exec_time": 2.333392}, {"step": "retrieve_asteroids", "start": "2022-01-21T17:42:41.851293+00:00", "end": "2022-01-21T17:42:41.993866+00:00", "exec_time": 0.142573}, {"step": "retrieve_ccds", "start": "2022-01-21T17:42:42.143120+00:00", "end": "2022-01-21T17:42:42.705068+00:00", "exec_time": 0.561948}, {"step": "retrieve_asteroids", "start": "2022-01-21T17:47:01.070638+00:00", "end": "2022-01-21T17:47:01.221564+00:00", "exec_time": 0.150926}, {"step": "retrieve_ccds", "start": "2022-01-21T17:47:01.359664+00:00", "end": "2022-01-21T17:47:01.911702+00:00", "exec_time": 0.552038}, {"step": "retrieve_asteroids", "start": "2022-01-21T17:49:11.086973+00:00", "end": "2022-01-21T17:49:11.222865+00:00", "exec_time": 0.135892}, {"step": "retrieve_asteroids", "start": "2022-01-21T17:50:31.525492+00:00", "end": "2022-01-21T17:50:31.662618+00:00", "exec_time": 0.137126}, {"step": "retrieve_ccds", "start": "2022-01-21T17:50:31.797412+00:00", "end": "2022-01-21T17:50:32.386715+00:00", "exec_time": 0.589303}, {"step": "retrieve_asteroids", "start": "2022-01-21T19:09:10.462691+00:00", "end": "2022-01-21T19:09:10.610211+00:00", "exec_time": 0.14752}, {"step": "retrieve_ccds", "start": "2022-01-21T19:09:10.727400+00:00", "end": "2022-01-21T19:09:11.321155+00:00", "exec_time": 0.593755}, {"step": "retrieve_bsp", "start": "2022-01-21T19:09:11.427536+00:00", "end": "2022-01-21T19:09:14.594797+00:00", "exec_time": 3.167261}, {"step": "retrieve_asteroids", "start": "2022-01-21T19:22:29.594248+00:00", "end": "2022-01-21T19:22:29.747485+00:00", "exec_time": 0.153237}, {"step": "retrieve_ccds", "start": "2022-01-21T19:22:29.868814+00:00", "end": "2022-01-21T19:22:30.444385+00:00", "exec_time": 0.575571}, {"step": "retrieve_bsp", "start": "2022-01-21T19:22:30.560565+00:00", "end": "2022-01-21T19:22:30.636104+00:00", "exec_time": 0.075539}, {"step": "retrieve_asteroids", "start": "2022-01-21T19:23:25.645166+00:00", "end": "2022-01-21T19:23:25.777379+00:00", "exec_time": 0.132213}, {"step": "retrieve_ccds", "start": "2022-01-21T19:23:25.882744+00:00", "end": "2022-01-21T19:23:26.450621+00:00", "exec_time": 0.567877}, {"step": "retrieve_bsp", "start": "2022-01-21T19:23:26.553875+00:00", "end": "2022-01-21T19:23:26.637096+00:00", "exec_time": 0.083221}, {"step": "retrieve_asteroids", "start": "2022-01-21T19:24:13.713000+00:00", "end": "2022-01-21T19:24:13.854102+00:00", "exec_time": 0.141102}, {"step": "retrieve_ccds", "start": "2022-01-21T19:24:13.963102+00:00", "end": "2022-01-21T19:24:14.543898+00:00", "exec_time": 0.580796}, {"step": "retrieve_bsp", "start": "2022-01-21T19:24:14.664323+00:00", "end": "2022-01-21T19:24:17.472803+00:00", "exec_time": 2.80848}, {"step": "retrieve_asteroids", "start": "2022-01-21T19:26:36.240263+00:00", "end": "2022-01-21T19:26:36.390041+00:00", "exec_time": 0.149778}, {"step": "retrieve_ccds", "start": "2022-01-21T19:26:36.517070+00:00", "end": "2022-01-21T19:26:37.139470+00:00", "exec_time": 0.6224}, {"step": "retrieve_bsp", "start": "2022-01-21T19:26:37.258819+00:00", "end": "2022-01-21T19:26:40.070629+00:00", "exec_time": 2.81181}], "traceback": "Traceback (most recent call last):\n  File \"orbit_trace.py\", line 290, in <module>\n    raise Exception(\"parou aqui\")\nException: parou aqui\n", "error": "parou aqui"}
+{
+  "id": 1,
+  "status": "Running",
+  "submit_time": null,
+  "start": "2022-01-24T19:48:56.550804+00:00",
+  "end": "2022-01-24T20:13:13.595949+00:00",
+  "exec_time": 1457.045145,
+  "estimated_execution_time": 0.0,
+  "path": "/archive/des/tno/dev/nima/pipeline/examples/orbit_trace_job",
+  "bsp_planetary": {
+    "name": "de435",
+    "filename": "de435.bsp",
+    "absolute_path": "/archive/des/tno/dev/bsp_planetary/de435.bsp"
+  },
+  "leap_seconds": {
+    "name": "naif0012",
+    "filename": "naif0012.tls",
+    "absolute_path": "/archive/des/tno/dev/leap_seconds/naif0012.tls"
+  },
+  "period": [
+    "2012-11-01",
+    "2019-02-01"
+  ],
+  "observatory_location": [
+    289.193583333,
+    -30.16958333,
+    2202.7
+  ],
+  "match_radius": 2,
+  "expected_asteroids": 0,
+  "processed_asteroids": 1,
+  "filter_type": "name",
+  "filter_value": "Eris",
+  "count_asteroids": 1,
+  "count_ccds": 21,
+  "count_observations": 0,
+  "time_profile": [],
+  "traceback": "Traceback (most recent call last):\n  File \"orbit_trace.py\", line 248, in <module>\n    raise Exception(\"parou aqui\")\nException: parou aqui\n",
+  "error": "parou aqui"
+}

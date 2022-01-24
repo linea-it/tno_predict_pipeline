@@ -9,7 +9,7 @@ def get_logger(path, filename='refine.log'):
     formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
     file_handler = logging.FileHandler(logfile)
     file_handler.setFormatter(formatter)
-    log = logging.getLogger('refine')
+    log = logging.getLogger(filename.split('.log')[0])
     log.setLevel(logging.DEBUG)
     log.addHandler(file_handler)
 
@@ -326,64 +326,3 @@ def date_to_jd(date_obs, exptime, leap_second):
     spice.kclear()
 
     return jd
-
-
-def findSPKID(bsp):
-    """Search the spk id of a small Solar System object from bsp file
-
-    Args:
-        bsp (str): File path for bsp jpl file.
-
-    Returns:
-        str: Spk id of Object
-    """
-    import spiceypy as spice
-
-    bsp = [bsp]
-    spice.furnsh(bsp)
-
-    i = 0
-    kind = 'spk'
-    fillen = 256
-    typlen = 33
-    srclen = 256
-    keys = ['Target SPK ID   :', 'ASTEROID_SPK_ID =']
-    n = len(keys[0])
-
-    name, kind, source, loc = spice.kdata(i, kind, fillen, typlen, srclen)
-    flag = False
-    spk = ''
-    while not flag:
-        try:
-            m, header, flag = spice.dafec(loc, 1)
-            row = header[0]
-            if row[:n] in keys:
-                spk = row[n:].strip()
-                break
-        except:
-            break
-    return spk
-
-
-def geo_topo_vector(longitude, latitude, elevation, jd):
-    '''
-    Transformation from [longitude, latitude, elevation] to [x,y,z]
-    '''
-    from astropy.coordinates import GCRS, EarthLocation
-    from astropy.time import Time
-    import numpy as np
-
-    loc = EarthLocation(longitude, latitude, elevation)
-
-    time = Time(jd, scale='utc', format='jd')
-    itrs = loc.get_itrs(obstime=time)
-    gcrs = itrs.transform_to(GCRS(obstime=time))
-
-    r = gcrs.cartesian
-
-    # convert from m to km
-    x = r.x.value/1000.0
-    y = r.y.value/1000.0
-    z = r.z.value/1000.0
-
-    return np.array([x, y, z])

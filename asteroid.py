@@ -11,6 +11,7 @@ import csv
 import pandas as pd
 from io import StringIO
 import logging
+from external_inputs.jpl import get_bsp_from_jpl, findSPKID
 
 
 def serialize(obj):
@@ -37,15 +38,20 @@ def serialize(obj):
 class Asteroid():
 
     __log = None
+    __BSP_START_PERIOD = '2012-01-01'
+    __BSP_YEARS_AHEAD = 1
+    __BSP_YEARS_BEHIND = 1
+    __BSP_DAYS_TO_EXPIRE = 60
+
     id = None
     name = None
     number = None
+    spkid = None
     alias = None
     dynclass = None
     base_dynclass = None
     path = None
 
-    ccds = list()
     orbit_trace_query_ccds = dict()
 
     condor_job = None
@@ -67,6 +73,9 @@ class Asteroid():
 
         self.alias = name.replace(' ', '').replace('_', '')
 
+        self.base_dynclass = base_dynclass
+        self.dynclass = dynclass
+
         # Cria ou recupera o path do asteroid
         self.path = self.get_or_create_dir()
 
@@ -84,9 +93,13 @@ class Asteroid():
             if key.startswith('_') is False
         )
 
+    def set_log(self, logname):
+        self.__logname = logname
+        self.__log = logging.getLogger(logname)
+
     def get_log(self):
         if self.__log is None:
-            self.__log = logging.getLogger('refine')
+            self.__log = logging.getLogger("refine")
 
         return self.__log
 
@@ -96,6 +109,14 @@ class Asteroid():
         config.read(os.path.join(os.environ['EXECUTION_PATH'], 'config.ini'))
         ASTEROID_PATH = config['DEFAULT'].get('AsteroidPath')
         return ASTEROID_PATH
+
+    def get_jpl_email(self):
+        # Carrega as variaveis de configuração do arquivo config.ini
+        config = configparser.ConfigParser()
+        config.read(os.path.join(os.environ['EXECUTION_PATH'], 'config.ini'))
+        JPL_EMAIL = config['DEFAULT'].get(
+            'JplEmail', 'sso-portal@linea.gov.br')
+        return JPL_EMAIL
 
     def get_or_create_dir(self):
         """Criar o diretório para o asteroid.
@@ -144,6 +165,93 @@ class Asteroid():
 
         self.write_asteroid_json()
 
+    def get_bsp_path(self):
+        filename = '{}.bsp'.format(self.alias)
+        filepath = pathlib.Path.joinpath(
+            pathlib.Path(self.path), filename)
+
+        return filepath
+
+    def calculate_bsp_start_period(self, start_period):
+
+        years_behind = int(self.__BSP_YEARS_BEHIND)
+        start_period = dt.strptime(str(start_period), '%Y-%m-%d')
+        start = dt(year=start_period.year-years_behind, month=1, day=1)
+
+        return start.strftime('%Y-%m-%d')
+
+    def calculate_bsp_end_period(self, end_period):
+
+        years_ahead = int(self.__BSP_YEARS_AHEAD)
+        end_period = dt.strptime(str(end_period), '%Y-%m-%d')
+        end = dt(year=end_period.year+years_ahead, month=12, day=31)
+
+        return end.strftime('%Y-%m-%d')
+
+    def download_jpl_bsp(self, end_period, force=False, start_period=None):
+        """
+            Exemplo do retorno:
+                {
+                    'source': 'JPL', 
+                    'filename': '2010BJ35.bsp', 
+                    'size': 225280, 
+                    'start_period': '2012-01-01', 
+                    'end_period': '2024-12-31', 
+                    'dw_start': '2021-11-23T20:27:21.014818+00:00', 
+                    'dw_finish': '2021-11-23T20:27:23.887789+00:00', 
+                    'dw_time': 2.872971
+                }
+        """
+        log = self.get_log()
+        log.debug("Downloading BSP JPL started")
+
+        bsp_path = self.get_bsp_path()
+
+        if force is True and bsp_path.exists():
+            # Remove o arquivo se já existir e force=True
+            # Um novo download será realizado.
+            bsp_path.unlink()
+
+        if start_period is None:
+            start_period = self.__BSP_START_PERIOD
+        else:
+            start_period = self.calculate_bsp_start_period(start_period)
+
+        t0 = dt.now(tz=timezone.utc)
+        end_period = self.calculate_bsp_end_period(end_period)
+
+        try:
+            bsp_path = get_bsp_from_jpl(
+                self.name,
+                start_period,
+                end_period,
+                self.get_jpl_email(),
+                self.path
+            )
+
+            t1 = dt.now(tz=timezone.utc)
+            tdelta = t1 - t0
+
+            log.info(
+                "Asteroid [%s] BSP Downloaded in %s" % (self.name, tdelta))
+
+            data = dict({
+                'source': 'JPL',
+                'filename': bsp_path.name,
+                'size': bsp_path.stat().st_size,
+                'start_period': start_period,
+                'end_period': end_period,
+                'dw_start': t0.isoformat(),
+                'dw_finish': t1.isoformat(),
+                'dw_time': tdelta.total_seconds(),
+                'downloaded_in_this_run': True
+            })
+
+            return data
+        except Exception as e:
+            log.warning("Failed to Download BSP. Error: [%s]" % e)
+            return None
+
     def check_bsp_jpl(self, end_period, days_to_expire=None, start_period=None):
 
         log = self.get_log()
@@ -153,14 +261,8 @@ class Asteroid():
         try:
             log.debug("Asteroid [%s] Checking BSP JPL" % self.name)
 
-            aei = AsteroidExternalInputs(
-                name=self.name,
-                number=self.number,
-                asteroid_path=self.path
-            )
-
             if days_to_expire is None:
-                days_to_expire = aei.BSP_DAYS_TO_EXPIRE
+                days_to_expire = self.__BSP_DAYS_TO_EXPIRE
 
             bsp_jpl = None
 
@@ -169,8 +271,9 @@ class Asteroid():
                 # Já existe Informações de BSP baixado
 
                 # Path para o arquivo BSP
-                bsp_path = pathlib.Path.joinpath(
-                    pathlib.Path(self.path), self.bsp_jpl['filename'])
+                bsp_path = self.get_bsp_path()
+                # bsp_path = pathlib.Path.joinpath(
+                #     pathlib.Path(self.path), self.bsp_jpl['filename'])
 
                 # Verificar se o arquivo BSP existe
                 if bsp_path.exists():
@@ -200,7 +303,7 @@ class Asteroid():
 
             if bsp_jpl is None:
                 # Fazer um novo Download do BSP
-                bsp_jpl = aei.download_jpl_bsp(
+                bsp_jpl = self.download_jpl_bsp(
                     start_period=start_period, end_period=end_period, force=True)
 
             if bsp_jpl is not None:
@@ -250,7 +353,8 @@ class Asteroid():
             aei = AsteroidExternalInputs(
                 name=self.name,
                 number=self.number,
-                asteroid_path=self.path
+                asteroid_path=self.path,
+                logname=self.__logname
             )
 
             if days_to_expire is None:
@@ -336,7 +440,8 @@ class Asteroid():
             aei = AsteroidExternalInputs(
                 name=self.name,
                 number=self.number,
-                asteroid_path=self.path
+                asteroid_path=self.path,
+                logname=self.__logname
             )
 
             if days_to_expire is None:
@@ -874,7 +979,6 @@ class Asteroid():
 
         # Limpa o cache de resultados anteriores, esta etapa
         # Para esta etapa sempre será executada uma query nova.
-        self.ccds = list()
         self.orbit_trace_query_ccds = dict()
 
         tp0 = dt.now(tz=timezone.utc)
@@ -891,7 +995,11 @@ class Asteroid():
                     'date_jd': date_to_jd(ccd['date_obs'], ccd['exptime'], leap_second),
                 })
 
-            self.ccds = ccds
+            self.orbit_trace_query_ccds.update({
+                'count': len(ccds)
+            })
+
+            return ccds
 
         except Exception as e:
             msg = "Failed in the Retriving CCDs stage. Error: %s" % e
@@ -900,8 +1008,6 @@ class Asteroid():
                 'message': msg
             })
             log.error("Asteroid [%s] %s" % (self.name, msg))
-
-            self.ccds = list()
 
         finally:
             # Atualiza o Json do Asteroid
@@ -915,4 +1021,16 @@ class Asteroid():
 
             self.write_asteroid_json()
 
-            return self.ccds
+    def get_spkid(self):
+        log = self.get_log()
+
+        if self.spkid is None:
+            bsp_path = self.get_bsp_path()
+            if self.bsp_jpl is not None and bsp_path.exists() is True:
+                log.info("Search the SPKID from bsp file.")
+                self.spkid = findSPKID(str(bsp_path))
+
+                self.write_asteroid_json()
+                log.info("Asteroid [%s] SPKID [%s]." % (self.name, self.spkid))
+
+        return self.spkid

@@ -1,31 +1,35 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 import argparse
+import configparser
+import json
 import os
+import pathlib
+import time
+import traceback
 from datetime import datetime, timezone
+
+import humanize
+import parsl
+
 from asteroid import Asteroid
-
-
 from library import (
-    get_logger,
-    read_inputs,
-    retrieve_asteroids,
     # retrieve_ccds_by_asteroid,
     # retrieve_bsp_by_asteroid,
     # theoretical_positions,
     # observed_positions,
     # ingest_observations,
     # write_asteroid_data,
-    write_job_file
-)
-# from dao import AsteroidDao, AstrometryJobDao
-import time
-import traceback
-import parsl
-from parsl_config import htex_config, DES_CATALOGS_BASEPATH
-import pathlib
-import json
-import humanize
+    get_logger, read_inputs, retrieve_asteroids, write_job_file)
+
+from orbit_trace_library import(theoretical_positions)
+from parsl_config import htex_config
+
+# Carrega as variaveis de configuração do arquivo config.ini
+config = configparser.ConfigParser()
+config.read('config.ini')
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("jobid", help="Job ID")
@@ -69,6 +73,9 @@ try:
     # log.debug("Job Inputs: %s" % json.dumps(job))
 
     # Setting Inputs
+    DES_CATALOGS_BASEPATH = config['DEFAULT'].get('DesCatalogPath')
+    log.info("DES_CATALOGS_BASEPATH: [%s]" % DES_CATALOGS_BASEPATH)
+
     BSP_PLANETARY = job['bsp_planetary']['absolute_path']
     log.info("BSP_PLANETARY: [%s]" % BSP_PLANETARY)
 
@@ -89,36 +96,6 @@ try:
     log.info("MATCH_RADIUS: [%s]" % MATCH_RADIUS)
 
     BSP_DAYS_TO_EXPIRE = job.get('bsp_days_to_expire', 0)
-
-    # log.info("Parsl Load started")
-    # # Load Parsl Configs
-    # parsl.clear()
-
-    # htex_config.run_dir = os.path.join(current_path, "runinfo")
-
-    # # Verifica se a configuração tem a label htcondor
-    # try:
-    #     # Htcondor config with full nodes
-    #     htex_config.executors[0].provider.channel.script_dir = os.path.join(
-    #         current_path, "script_dir")
-
-    #     # Adicionar o ID do processo ao arquivo de submissão do condor
-    #     htex_config.executors[0].provider.scheduler_options += '+AppId = {}\n'.format(
-    #         jobid)
-
-    #     # Htcondor config with Limited nodes
-    #     htex_config.executors[1].provider.channel.script_dir = os.path.join(
-    #         current_path, "script_dir")
-
-    #     htex_config.executors[1].provider.scheduler_options += '+AppId = {}\n'.format(
-    #         jobid)
-    # except:
-    #     # Considera que é uma execução local
-    #     pass
-
-    # parsl.load(htex_config)
-
-    # log.info("Parsl Load finished")
 
     # =========================== Asteroids ===========================
 
@@ -177,6 +154,8 @@ try:
                 dynclass=asteroid['dynclass'],
             )
 
+            a.set_log("orbit_trace")
+
             ccds = a.retrieve_ccds(LEAP_SECOND)
             count_ccds += len(ccds)
 
@@ -234,41 +213,28 @@ try:
                 dynclass=asteroid['dynclass'],
             )
 
+            a.set_log("orbit_trace")
+
             have_bsp_jpl = a.check_bsp_jpl(
                 start_period=DES_START_PERIOD,
                 end_period=DES_FINISH_PERIOD,
                 days_to_expire=BSP_DAYS_TO_EXPIRE
             )
 
-            if not have_bsp_jpl:
+            if have_bsp_jpl:
+                # Recupera o SPKID que será usado na proxima etapa.
+                spkid = a.get_spkid()
+                # Recupera o Path para o BSP
+                bsp_path = a.get_bsp_path()
+
+                asteroid.update({'spkid': spkid, 'bsp_path': bsp_path})
+
+            else:
                 asteroid.update({'status': 'failure'})
 
         i += 1
 
         log.debug("BSPs JPL: %s/%s" % (i, len(asteroids)))
-
-        # # TODO: Verificar antes de baixar se o arquivo já existe
-        # bsp = retrieve_bsp_by_asteroid(
-        #     name=asteroid['name'],
-        #     initial_date=DES_START_PERIOD,
-        #     final_date=DES_FINISH_PERIOD,
-        #     job_path=current_path
-        # ).result()
-
-        # # Criar o diretório para o asteroid.
-        # asteroid_path = pathlib.Path.joinpath(
-        #     pathlib.Path(current_path), asteroid['name'].replace(' ', '_'))
-
-        # asteroid.update({
-        #     'bsp_jpl': bsp,
-        #     'path': str(asteroid_path.absolute())
-        # })
-
-        # log.debug("[%s] BSP: [%s]" % (asteroid['name'], bsp))
-
-        # if bsp['status'] == 'failure':
-        #     asteroid.update({'status': 'failure'})
-        #     # TODO: Se o asteroid falhou deve ser escrito no diretório o json e removido do array asteroids
 
     step_t1 = datetime.now(tz=timezone.utc)
     step_tdelta = step_t1 - step_t0
@@ -287,7 +253,36 @@ try:
     # Update Job File
     write_job_file(current_path, job)
 
-    raise Exception("parou aqui")
+    # =========================== Parsl ===========================
+    log.info("Parsl Load started")
+    # Load Parsl Configs
+    parsl.clear()
+
+    htex_config.run_dir = os.path.join(current_path, "runinfo")
+
+    # Verifica se a configuração tem a label htcondor
+    try:
+        # Htcondor config with full nodes
+        htex_config.executors[0].provider.channel.script_dir = os.path.join(
+            current_path, "script_dir")
+
+        # Adicionar o ID do processo ao arquivo de submissão do condor
+        htex_config.executors[0].provider.scheduler_options += '+AppId = {}\n'.format(
+            jobid)
+
+        # Htcondor config with Limited nodes
+        htex_config.executors[1].provider.channel.script_dir = os.path.join(
+            current_path, "script_dir")
+
+        htex_config.executors[1].provider.scheduler_options += '+AppId = {}\n'.format(
+            jobid)
+    except:
+        # Considera que é uma execução local
+        pass
+
+    parsl.load(htex_config)
+
+    log.info("Parsl Load finished")
 
     # =========================== Theoretical ===========================
     # Calculando as posições teoricas
@@ -309,7 +304,7 @@ try:
             is_done.append(f.done())
         log.debug("Theoretical Positions running: %s/%s" %
                   (is_done.count(True), len(futures)))
-        time.sleep(1)
+        time.sleep(60)
 
     # asteroids = [i.result() for i in futures]
     asteroids = list()
@@ -338,6 +333,8 @@ try:
 
     # Update Job File
     write_job_file(current_path, job)
+
+    raise Exception("parou aqui")
 
     # =========================== Observed ===========================
     # Calculando as posições Observadas
@@ -504,3 +501,9 @@ finally:
 
     log.info("Execution Time: %s" % tdelta)
     log.info("Identification of DES object is done!.")
+
+
+# Como Utilízar:
+# cd /archive/des/tno/dev/nima/pipeline
+# source env.sh
+# python orbit_trace.py 1 /archive/des/tno/dev/nima/pipeline/examples/orbit_trace_job
