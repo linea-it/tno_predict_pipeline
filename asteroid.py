@@ -52,7 +52,9 @@ class Asteroid():
     base_dynclass = None
     path = None
 
-    orbit_trace_query_ccds = dict()
+    ot_query_ccds = dict()
+    ot_theo_pos = dict()
+    ot_ing_obs = dict()
 
     condor_job = None
     des_observations = None
@@ -979,7 +981,7 @@ class Asteroid():
 
         # Limpa o cache de resultados anteriores, esta etapa
         # Para esta etapa sempre será executada uma query nova.
-        self.orbit_trace_query_ccds = dict()
+        self.ot_query_ccds = dict()
 
         tp0 = dt.now(tz=timezone.utc)
 
@@ -995,7 +997,7 @@ class Asteroid():
                     'date_jd': date_to_jd(ccd['date_obs'], ccd['exptime'], leap_second),
                 })
 
-            self.orbit_trace_query_ccds.update({
+            self.ot_query_ccds.update({
                 'count': len(ccds)
             })
 
@@ -1004,7 +1006,7 @@ class Asteroid():
         except Exception as e:
             msg = "Failed in the Retriving CCDs stage. Error: %s" % e
 
-            self.orbit_trace_query_ccds = dict({
+            self.ot_query_ccds = dict({
                 'message': msg
             })
             log.error("Asteroid [%s] %s" % (self.name, msg))
@@ -1014,7 +1016,7 @@ class Asteroid():
 
             tp1 = dt.now(tz=timezone.utc)
 
-            self.orbit_trace_query_ccds.update({
+            self.ot_query_ccds.update({
                 'tp_start': tp0.isoformat(),
                 'tp_finish': tp1.isoformat()
             })

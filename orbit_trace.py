@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import argparse
@@ -14,16 +13,8 @@ import humanize
 import parsl
 
 from asteroid import Asteroid
-from library import (
-    # retrieve_ccds_by_asteroid,
-    # retrieve_bsp_by_asteroid,
-    # theoretical_positions,
-    # observed_positions,
-    # ingest_observations,
-    # write_asteroid_data,
-    get_logger, read_inputs, retrieve_asteroids, write_job_file)
-
-from orbit_trace_library import(theoretical_positions)
+from library import get_logger, read_inputs, retrieve_asteroids, write_job_file, ingest_observations
+from orbit_trace_apps import observed_positions, theoretical_positions
 from parsl_config import htex_config
 
 # Carrega as variaveis de configuração do arquivo config.ini
@@ -32,8 +23,8 @@ config.read('config.ini')
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("jobid", help="Job ID")
-parser.add_argument("path", help="Job Path")
+parser.add_argument('jobid', help='Job ID')
+parser.add_argument('path', help='Job Path')
 args = parser.parse_args()
 
 # Job ID
@@ -50,9 +41,9 @@ t0 = datetime.now(tz=timezone.utc)
 
 # Create a Log file
 log = get_logger(current_path, 'orbit_trace.log')
-log.info("--------------< DES Object Identifier >--------------")
-log.info("Job ID: [%s]" % jobid)
-log.info("Current Path: [%s]" % current_path)
+log.info('--------------< DES Object Identifier >--------------')
+log.info('Job ID: [%s]' % jobid)
+log.info('Current Path: [%s]' % current_path)
 
 # Altera o path de execução
 # A raiz agora é o path passado como parametro.
@@ -66,43 +57,46 @@ job.update({
     'start': t0.isoformat()
 })
 
-log.info("Update Job status to running.")
+log.info('Update Job status to running.')
 write_job_file(current_path, job)
 
 try:
-    # log.debug("Job Inputs: %s" % json.dumps(job))
+    # log.debug('Job Inputs: %s' % json.dumps(job))
 
     # Setting Inputs
     DES_CATALOGS_BASEPATH = config['DEFAULT'].get('DesCatalogPath')
-    log.info("DES_CATALOGS_BASEPATH: [%s]" % DES_CATALOGS_BASEPATH)
+    log.info('DES_CATALOGS_BASEPATH: [%s]' % DES_CATALOGS_BASEPATH)
 
     BSP_PLANETARY = job['bsp_planetary']['absolute_path']
-    log.info("BSP_PLANETARY: [%s]" % BSP_PLANETARY)
+    log.info('BSP_PLANETARY: [%s]' % BSP_PLANETARY)
 
     LEAP_SECOND = job['leap_seconds']['absolute_path']
-    log.info("LEAP_SECOND: [%s]" % LEAP_SECOND)
+    log.info('LEAP_SECOND: [%s]' % LEAP_SECOND)
 
     DES_START_PERIOD = job['period'][0]
-    log.info("DES_START_PERIOD: [%s]" % DES_START_PERIOD)
+    log.info('DES_START_PERIOD: [%s]' % DES_START_PERIOD)
 
     DES_FINISH_PERIOD = job['period'][1]
-    log.info("DES_FINISH_PERIOD: [%s]" % DES_FINISH_PERIOD)
+    log.info('DES_FINISH_PERIOD: [%s]' % DES_FINISH_PERIOD)
 
     # Location of observatory: [longitude, latitude, elevation]
     OBSERVATORY_LOCATION = job['observatory_location']
-    log.info("OBSERVATORY_LOCATION: %s" % OBSERVATORY_LOCATION)
+    log.info('OBSERVATORY_LOCATION: %s' % OBSERVATORY_LOCATION)
 
     MATCH_RADIUS = job['match_radius']
-    log.info("MATCH_RADIUS: [%s]" % MATCH_RADIUS)
+    log.info('MATCH_RADIUS: [%s]' % MATCH_RADIUS)
 
-    BSP_DAYS_TO_EXPIRE = job.get('bsp_days_to_expire', 0)
+    BSP_DAYS_TO_EXPIRE = job.get('bsp_days_to_expire', 60)
 
     # =========================== Asteroids ===========================
 
     # Retrieve Asteroids.
-    log.info("Retriving Asteroids started")
+    log.info('Retriving Asteroids started')
 
     step_t0 = datetime.now(tz=timezone.utc)
+
+    # Lista com os asteroids que falharem durante a execução.
+    a_failed = list()
 
     asteroids = retrieve_asteroids(
         job['filter_type'],
@@ -126,9 +120,9 @@ try:
 
     job['processed_asteroids'] = len(asteroids)
 
-    log.info("Asteroids Count: %s" % job['processed_asteroids'])
+    log.info('Asteroids Count: %s' % job['processed_asteroids'])
 
-    log.info("Retriving Asteroids Finished in %s" %
+    log.info('Retriving Asteroids Finished in %s' %
              humanize.naturaldelta(step_tdelta, minimum_unit='microseconds'))
 
     # Update Job File
@@ -136,7 +130,7 @@ try:
 
     # =========================== CCDs ===========================
     # Retrieve CCDs
-    log.info("Retriving CCDs started")
+    log.info('Retriving CCDs started')
 
     step_t0 = datetime.now(tz=timezone.utc)
 
@@ -154,7 +148,7 @@ try:
                 dynclass=asteroid['dynclass'],
             )
 
-            a.set_log("orbit_trace")
+            a.set_log('orbit_trace')
 
             ccds = a.retrieve_ccds(LEAP_SECOND)
             count_ccds += len(ccds)
@@ -162,16 +156,19 @@ try:
             if len(ccds) == 0:
                 asteroid.update({'status': 'failure', 'ccds': []})
             else:
-                asteroid.update({'ccds': ccds})
+                asteroid.update({
+                    'ccds': ccds,
+                    'path': str(a.path)
+                })
 
-            log.debug("Asteroid: [%s] CCDs: [%s]" %
+            log.debug('Asteroid: [%s] CCDs: [%s]' %
                       (asteroid['name'], len(asteroid['ccds'])))
 
             del a
 
         i += 1
 
-        log.debug("Query CCDs: %s/%s" % (i, len(asteroids)))
+        log.debug('Query CCDs: %s/%s' % (i, len(asteroids)))
 
     step_t1 = datetime.now(tz=timezone.utc)
     step_tdelta = step_t1 - step_t0
@@ -185,9 +182,9 @@ try:
     }))
 
     job.update({'count_ccds': count_ccds})
-    log.info("CCDs Count: %s" % count_ccds)
+    log.info('CCDs Count: %s' % count_ccds)
 
-    log.info("Retriving CCDs Finished in %s" %
+    log.info('Retriving CCDs Finished in %s' %
              humanize.naturaldelta(step_tdelta, minimum_unit='microseconds'))
 
     # Update Job File
@@ -196,7 +193,7 @@ try:
     # =========================== BSP ===========================
     # Retrieve BSPs
     # Etapa sequencial
-    log.info("Retriving BSP JPL started")
+    log.info('Retriving BSP JPL started')
 
     step_t0 = datetime.now(tz=timezone.utc)
 
@@ -213,7 +210,7 @@ try:
                 dynclass=asteroid['dynclass'],
             )
 
-            a.set_log("orbit_trace")
+            a.set_log('orbit_trace')
 
             have_bsp_jpl = a.check_bsp_jpl(
                 start_period=DES_START_PERIOD,
@@ -227,14 +224,17 @@ try:
                 # Recupera o Path para o BSP
                 bsp_path = a.get_bsp_path()
 
-                asteroid.update({'spkid': spkid, 'bsp_path': bsp_path})
+                asteroid.update({
+                    'spkid': spkid,
+                    'bsp_path': str(bsp_path)
+                })
 
             else:
                 asteroid.update({'status': 'failure'})
 
         i += 1
 
-        log.debug("BSPs JPL: %s/%s" % (i, len(asteroids)))
+        log.debug('BSPs JPL: %s/%s' % (i, len(asteroids)))
 
     step_t1 = datetime.now(tz=timezone.utc)
     step_tdelta = step_t1 - step_t0
@@ -247,46 +247,46 @@ try:
         'exec_time': step_tdelta.total_seconds()
     }))
 
-    log.info("Retriving BSP JPL Finished %s" %
+    log.info('Retriving BSP JPL Finished %s' %
              humanize.naturaldelta(step_tdelta, minimum_unit='microseconds'))
 
     # Update Job File
     write_job_file(current_path, job)
 
     # =========================== Parsl ===========================
-    log.info("Parsl Load started")
+    log.info('Parsl Load started')
     # Load Parsl Configs
     parsl.clear()
 
-    htex_config.run_dir = os.path.join(current_path, "runinfo")
+    htex_config.run_dir = os.path.join(current_path, 'runinfo')
 
     # Verifica se a configuração tem a label htcondor
     try:
         # Htcondor config with full nodes
         htex_config.executors[0].provider.channel.script_dir = os.path.join(
-            current_path, "script_dir")
+            current_path, 'script_dir')
 
         # Adicionar o ID do processo ao arquivo de submissão do condor
         htex_config.executors[0].provider.scheduler_options += '+AppId = {}\n'.format(
             jobid)
 
         # Htcondor config with Limited nodes
-        htex_config.executors[1].provider.channel.script_dir = os.path.join(
-            current_path, "script_dir")
+        # htex_config.executors[1].provider.channel.script_dir = os.path.join(
+        #     current_path, 'script_dir')
 
-        htex_config.executors[1].provider.scheduler_options += '+AppId = {}\n'.format(
-            jobid)
+        # htex_config.executors[1].provider.scheduler_options += '+AppId = {}\n'.format(
+        #     jobid)
     except:
         # Considera que é uma execução local
         pass
 
     parsl.load(htex_config)
 
-    log.info("Parsl Load finished")
+    log.info('Parsl Load finished')
 
     # =========================== Theoretical ===========================
     # Calculando as posições teoricas
-    log.info("Calculating theoretical positions started")
+    log.info('Calculating theoretical positions started')
 
     step_t0 = datetime.now(tz=timezone.utc)
 
@@ -302,23 +302,25 @@ try:
         is_done = list()
         for f in futures:
             is_done.append(f.done())
-        log.debug("Theoretical Positions running: %s/%s" %
+        log.debug('Theoretical Positions running: %s/%s' %
                   (is_done.count(True), len(futures)))
         time.sleep(60)
 
     # asteroids = [i.result() for i in futures]
     asteroids = list()
+    theo_ast_failed = 0
     for task in futures:
         asteroid = task.result()
-
         if asteroid['status'] == 'failure':
-            pass
-            # TODO: Se o asteroid falhou deve ser escrito no diretório o json e removido do array asteroids
+            a_failed.append(asteroid)
+            theo_ast_failed += 1
+            log.warning('Asteroid [%s] %s' % (asteroid['error']))
         else:
             asteroids.append(asteroid)
 
-    log.info("Calculating theoretical positions Finished %s" %
-             humanize.naturaldelta(step_tdelta, minimum_unit='microseconds'))
+    log.info('Calculating theoretical positions Finished %s. Asteroids Success [%s] Failed [%s]' % (
+        humanize.naturaldelta(step_tdelta, minimum_unit='microseconds'),
+        len(asteroids), theo_ast_failed))
 
     step_t1 = datetime.now(tz=timezone.utc)
     step_tdelta = step_t1 - step_t0
@@ -334,36 +336,30 @@ try:
     # Update Job File
     write_job_file(current_path, job)
 
-    raise Exception("parou aqui")
-
     # =========================== Observed ===========================
     # Calculando as posições Observadas
-    log.info("Calculating observed positions started")
+    log.info('Calculating observed positions started')
 
     step_t0 = datetime.now(tz=timezone.utc)
 
     futures = list()
     for asteroid in asteroids:
-        if asteroid['status'] != 'failure':
-            idx = 0
-            for ccd in asteroid['ccds']:
-                if ccd['theoretical_coordinates'] is not None:
-                    # Monta o path para os catalogos
-                    ccd['path'] = os.path.join(
-                        DES_CATALOGS_BASEPATH, ccd['path'])
+        idx = 0
+        for ccd in asteroid['ccds']:
+            if ccd['theoretical_coordinates'] is not None:
+                # Monta o path para os catalogos
+                ccd['path'] = os.path.join(
+                    DES_CATALOGS_BASEPATH, ccd['path'])
 
-                    # TODO: Path hardcoded remover para rodar no ambiente.
-                    #ccd['path'] = '/archive/ccd_images/Eris'
-
-                    futures.append(observed_positions(
-                        idx=idx,
-                        name=asteroid['name'],
-                        asteroid_id=asteroid['id'],
-                        ccd=ccd,
-                        asteroid_path=asteroid['path'],
-                        radius=MATCH_RADIUS,
-                    ))
-                    idx += 1
+                futures.append(observed_positions(
+                    idx=idx,
+                    name=asteroid['name'],
+                    asteroid_id=asteroid['id'],
+                    ccd=ccd,
+                    asteroid_path=asteroid['path'],
+                    radius=MATCH_RADIUS,
+                ))
+                idx += 1
 
     # Monitoramento parcial das tasks
     is_done = list()
@@ -371,12 +367,13 @@ try:
         is_done = list()
         for f in futures:
             is_done.append(f.done())
-        log.debug("Observed Positions running: %s/%s" %
+        log.debug('Observed Positions running: %s/%s' %
                   (is_done.count(True), len(futures)))
         time.sleep(1)
 
     results = dict({})
     for task in futures:
+        # TODO: Guardar o time profile, tempo gasto em cada observação.
         asteroid_name, ccd, obs_coordinates = task.result()
 
         alias = asteroid_name.replace(' ', '_')
@@ -389,6 +386,7 @@ try:
 
     # Agrupar os resultados.
     count_observations = 0
+    obs_pos_ast_failed = 0
     for asteroid in asteroids:
         alias = asteroid_name.replace(' ', '_')
         asteroid.update({
@@ -398,7 +396,39 @@ try:
         })
         count_observations += asteroid['observations_count']
 
-    # log.debug(asteroids[0])
+        # Verificar se o asteroid teve algum erro
+        # no Calculo das posições Observadas
+        for ccd in asteroid['ccds']:
+            if 'error' in ccd and ccd['error'] is not None:
+                # Houve error em pelo menos 1 CCD do Asteroid.
+                # Basta ter um erro nos ccds para considerar o Asteroid como falha.
+                asteroid.update({
+                    'status': 'failure',
+                    'error': ccd['error']
+                })
+
+                log.warning('Asteroid [%s] %s' %
+                            (asteroid['name'], ccd['error']))
+
+                # Adiciona o Asteroid na lista de falhas
+                a_failed.append(asteroid)
+
+                obs_pos_ast_failed += 1
+
+                # Interrompe o loop nos ccds.
+                break
+
+    # Remove do array de asteroid os que falharam.
+    success_asteroids = list()
+    for asteroid in asteroids:
+        if asteroid['status'] != 'failure':
+            success_asteroids.append(asteroid)
+
+            # TODO: Remover os logs do diretório em caso de sucesso.
+            for p in pathlib.Path(asteroid['path']).glob("des_obs*.log"):
+                p.unlink()
+
+    asteroids = success_asteroids
 
     job.update({'count_observations': count_observations})
 
@@ -413,9 +443,9 @@ try:
         'exec_time': step_tdelta.total_seconds()
     }))
 
-    log.info("Observations Count: %s" % count_observations)
-    log.info("Calculating observed positions Finished %s" %
-             humanize.naturaldelta(step_tdelta, minimum_unit='microseconds'))
+    log.info('Observations Count: %s' % count_observations)
+    log.info('Calculating observed positions Finished %s. Asteroids Success [%s] Failed [%s]' %
+             (humanize.naturaldelta(step_tdelta, minimum_unit='microseconds'), len(asteroids), obs_pos_ast_failed))
 
     # Update Job File
     write_job_file(current_path, job)
@@ -423,18 +453,36 @@ try:
     # =========================== Ingest Observations ===========================
     # Ingere as posições observadas no banco de dados
     # ETAPA SEQUENCIAL!
-    log.info("Ingest the observations into the database started")
+    log.info('Ingest the observations into the database started')
 
     step_t0 = datetime.now(tz=timezone.utc)
 
     ingested_obs = 0
+    ingested_ast_failed = 0
+    success_asteroids = list()
     for asteroid in asteroids:
         alias = asteroid_name.replace(' ', '_')
         observations = results[alias]['observations']
 
         if len(observations) > 0:
-            count = ingest_observations(observations).result()
-            ingested_obs += count
+            result = ingest_observations(asteroid['path'], observations)
+            asteroid.update({'ot_ing_obs': result})
+
+            if 'error' in result:
+                # Adiciona o Asteroid na lista de falhas
+                a_failed.append(asteroid)
+                ingested_ast_failed += 1
+                log.warning('Asteroid [%s] %s' %
+                            (asteroid['name'], result['error']))
+                asteroid.update({
+                    'status': 'failed',
+                    'error': result['error']
+                })
+            else:
+                success_asteroids.append(asteroid)
+                ingested_obs += result['count']
+
+    asteroids = success_asteroids
 
     step_t1 = datetime.now(tz=timezone.utc)
     step_tdelta = step_t1 - step_t0
@@ -447,15 +495,23 @@ try:
         'exec_time': step_tdelta.total_seconds()
     }))
 
-    log.info("Observations Ingested: %s" % ingested_obs)
-    log.info("Ingest the observations into the database Finished %s" %
-             humanize.naturaldelta(step_tdelta, minimum_unit='microseconds'))
+    log.info('Observations Ingested: %s' % ingested_obs)
+    log.info('Ingest the observations into the database Finished %s. Asteroids Success [%s] Failed [%s]' % (
+             humanize.naturaldelta(step_tdelta, minimum_unit='microseconds'), len(asteroids), ingested_ast_failed))
 
     # Update Job File
     write_job_file(current_path, job)
 
+    log.debug(asteroids)
+
+    raise Exception('parou aqui')
+
+    # TODO: Faltou adicionar os time profiles e resultados das etapas no Json do Asteroid.
+    # TODO: Talvez guardar um arquivo com os ccds
+    # TODO: Completar o Job
+
     # =========================== Asteroids Json ===========================
-    log.info("Write Asteroid Data in json started")
+    log.info('Write Asteroid Data in json started')
     futures = list()
     for asteroid in asteroids:
         asteroid.update({'status': 'completed'})
@@ -463,7 +519,7 @@ try:
 
     asteroids = [i.result() for i in futures]
 
-    log.info("Write Asteroid Data in json Finish %s" %
+    log.info('Write Asteroid Data in json Finish %s' %
              humanize.naturaldelta(step_tdelta, minimum_unit='microseconds'))
 
     # Status 3 = Completed
@@ -493,14 +549,14 @@ finally:
         'exec_time': tdelta.total_seconds()
     })
 
-    log.info("Update Job status.")
+    log.info('Update Job status.')
     write_job_file(current_path, job)
 
     # Altera o path de execução para o path original
     os.chdir(original_path)
 
-    log.info("Execution Time: %s" % tdelta)
-    log.info("Identification of DES object is done!.")
+    log.info('Execution Time: %s' % tdelta)
+    log.info('Identification of DES object is done!.')
 
 
 # Como Utilízar:

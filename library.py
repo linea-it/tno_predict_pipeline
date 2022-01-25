@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 
 def get_logger(path, filename='refine.log'):
     import logging
@@ -326,3 +326,146 @@ def date_to_jd(date_obs, exptime, leap_second):
     spice.kclear()
 
     return jd
+
+
+def geo_topo_vector(longitude, latitude, elevation, jd):
+    '''
+    Transformation from [longitude, latitude, elevation] to [x,y,z]
+    '''
+    from astropy.coordinates import GCRS, EarthLocation
+    from astropy.time import Time
+    import numpy as np
+
+    loc = EarthLocation(longitude, latitude, elevation)
+
+    time = Time(jd, scale='utc', format='jd')
+    itrs = loc.get_itrs(obstime=time)
+    gcrs = itrs.transform_to(GCRS(obstime=time))
+
+    r = gcrs.cartesian
+
+    # convert from m to km
+    x = r.x.value/1000.0
+    y = r.y.value/1000.0
+    z = r.z.value/1000.0
+
+    return np.array([x, y, z])
+
+
+def compute_theoretical_positions(spkid, ccds, bsp_jpl, bsp_planetary, leap_second, location):
+
+    import spiceypy as spice
+    import numpy as np
+    from library import geo_topo_vector
+
+    # TODO: Provavelmente esta etapa é que causa a lentidão desta operação
+    # Por que carrega o arquivo de ephemeris planetarias que é pesado
+    # Load the asteroid and planetary ephemeris and the leap second (in order)
+    spice.furnsh(bsp_planetary)
+    spice.furnsh(leap_second)
+    spice.furnsh(bsp_jpl)
+
+    results = list()
+
+    for ccd in ccds:
+        date_jd = ccd['date_jd']
+
+        # Convert dates from JD to et format. "JD" is added due to spice requirement
+        date_et = spice.utc2et(str(date_jd) + " JD UTC")
+
+        # Compute geocentric positions (x,y,z) in km for each date with light time correction
+        r_geo, lt_ast = spice.spkpos(spkid, date_et, 'J2000', 'LT', '399')
+
+        lon, lat, ele = location
+        l_ra, l_dec = [], []
+
+        # Convert from geocentric to topocentric coordinates
+        r_topo = r_geo - geo_topo_vector(lon, lat, ele, float(date_jd))
+
+        # Convert rectangular coordinates (x,y,z) to range, right ascension, and declination.
+        d, rarad, decrad = spice.recrad(r_topo)
+
+        # Transform RA and Decl. from radians to degrees.
+        ra = np.degrees(rarad)
+        dec = np.degrees(decrad)
+
+        ccd.update({
+            'date_et': date_et,
+            'geocentric_positions': list(r_geo),
+            'topocentric_positions': list(r_topo),
+            'theoretical_coordinates': [ra, dec]
+        })
+
+        results.append(ccd)
+
+    spice.kclear()
+
+    return results
+
+
+def ingest_observations(path, observations):
+
+    import pathlib
+    import pandas as pd
+    from io import StringIO
+    from dao import ObservationDao
+    from datetime import datetime, timezone
+
+    result = dict()
+    tp0 = datetime.now(tz=timezone.utc)
+
+    try:
+        dao = ObservationDao()
+
+        # Apaga as observations já registradas para este asteroid antes de inserir.
+        name = observations[0]['name']
+        dao.delete_by_asteroid_name(name)
+
+        df_obs = pd.DataFrame(observations, columns=[
+            'name', 'date_obs', 'date_jd', 'ra', 'dec', 'offset_ra',
+            'offset_dec', 'mag_psf', 'mag_psf_err', 'asteroid_id', 'ccd_id'])
+
+        # Guarda uma copia das observações no diretório do Asteroid.
+        filepath = pathlib.Path(path, 'des_obs.csv')
+        df_obs.to_csv(filepath, sep=";", header=True, index=False)
+
+        # TODO: Tratar os dados se necessário
+        data = StringIO()
+        df_obs.to_csv(
+            data,
+            sep="|",
+            header=True,
+            index=False,
+        )
+        data.seek(0)
+
+        tablename = 'des_observation'
+
+        # Sql Copy com todas as colunas que vão ser importadas e o formato do csv.
+        sql = "COPY %s (name, date_obs, date_jd, ra, dec, offset_ra, offset_dec, mag_psf, mag_psf_err, asteroid_id, ccd_id) FROM STDIN with (FORMAT CSV, DELIMITER '|', HEADER);" % tablename
+
+        rowcount = dao.import_with_copy_expert(sql, data)
+
+        del dao
+        del df_obs
+        del data
+
+        result.update({
+            'count': rowcount,
+            'filename': filepath.name
+        })
+
+    except Exception as e:
+        msg = 'Failed on ingest des observation in database. Error: %s' % e
+        result.update({
+            'error': msg,
+        })
+
+    finally:
+        tp1 = datetime.now(tz=timezone.utc)
+        result.update({
+            'tp_start': tp0.isoformat(),
+            'tp_finish': tp1.isoformat()
+        })
+
+        return result
