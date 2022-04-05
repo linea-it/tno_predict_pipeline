@@ -27,7 +27,7 @@ def theoretical_positions(asteroid, bsp_planetary, leap_second, observatory_loca
     except Exception as e:
         trace = traceback.format_exc()
 
-        msg = "Failed on retrive asteroids BSP from JPL. %s" % e
+        msg = "Failed Compute Theoretical Positions. %s" % e
 
         asteroid['status'] = 'failure'
         asteroid['error'] = msg

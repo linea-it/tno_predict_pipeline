@@ -213,6 +213,7 @@ class Asteroid():
             # Remove o arquivo se já existir e force=True
             # Um novo download será realizado.
             bsp_path.unlink()
+            log.debug("Removed old bsp: [%s]" % (not bsp_path.exists()))
 
         if start_period is None:
             start_period = self.__BSP_START_PERIOD
@@ -234,9 +235,6 @@ class Asteroid():
             t1 = dt.now(tz=timezone.utc)
             tdelta = t1 - t0
 
-            log.info(
-                "Asteroid [%s] BSP Downloaded in %s" % (self.name, tdelta))
-
             data = dict({
                 'source': 'JPL',
                 'filename': bsp_path.name,
@@ -248,6 +246,9 @@ class Asteroid():
                 'dw_time': tdelta.total_seconds(),
                 'downloaded_in_this_run': True
             })
+
+            log.info(
+                "Asteroid [%s] BSP Downloaded in %s" % (self.name, tdelta))
 
             return data
         except Exception as e:
@@ -265,6 +266,11 @@ class Asteroid():
 
             if days_to_expire is None:
                 days_to_expire = self.__BSP_DAYS_TO_EXPIRE
+
+            if days_to_expire == 0:
+                # Força o download de um novo BSP
+                self.bsp_jpl = None
+                log.debug("Force Download days to expire = 0")
 
             bsp_jpl = None
 
@@ -307,6 +313,10 @@ class Asteroid():
                 # Fazer um novo Download do BSP
                 bsp_jpl = self.download_jpl_bsp(
                     start_period=start_period, end_period=end_period, force=True)
+
+                # Toda vez que baixar um novo BSP recalcular o SPKID
+                self.spkid = None
+                self.get_spkid()
 
             if bsp_jpl is not None:
                 # Atualiza os dados do bsp
@@ -533,6 +543,9 @@ class Asteroid():
             fpath.unlink()
 
         t0 = dt.now(tz=timezone.utc)
+
+        # TODO: Verificar primeiro se existe o arquivo de observações criado
+        # Pela etapa Orbit Trace. ai evita a query no banco.
 
         # Se for a primeira vez ou o arquivo tiver expirado
         # Executa a query na tabela de observações.
@@ -1026,13 +1039,28 @@ class Asteroid():
     def get_spkid(self):
         log = self.get_log()
 
-        if self.spkid is None:
+        if self.spkid is None or self.spkid is '':
             bsp_path = self.get_bsp_path()
-            if self.bsp_jpl is not None and bsp_path.exists() is True:
+
+            if self.bsp_jpl is not None and bsp_path.exists():
                 log.info("Search the SPKID from bsp file.")
-                self.spkid = findSPKID(str(bsp_path))
+
+                try:
+                    spkid = findSPKID(str(bsp_path))
+
+                    if spkid is None or spkid is '':
+                        self.spkid = None
+                        log.warning(
+                            "Asteroid [%s] Could not identify the SPKID." % self.name)
+                    else:
+                        self.spkid = spkid
+                        log.info("Asteroid [%s] SPKID [%s]." %
+                                 (self.name, self.spkid))
+
+                except Exception as e:
+                    self.spkid = None
+                    log.warning("Asteroid [%s] %s." % (self.name, e))
 
                 self.write_asteroid_json()
-                log.info("Asteroid [%s] SPKID [%s]." % (self.name, self.spkid))
 
         return self.spkid

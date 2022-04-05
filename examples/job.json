@@ -1,27 +1,40 @@
 {
-  "id": 2,
-  "status": "Running",
-  "submit_time": "2021-08-31T18:05:23.956195+00:00",
-  "start": "2021-11-17T17:13:30.885372+00:00",
-  "end": "2021-11-17T17:47:11.602107+00:00",
-  "exec_time": 2020.716735,
+  "id": 1,
+  "status": "Completed",
+  "submit_time": null,
+  "start": "2022-01-26T13:45:38.168619+00:00",
+  "end": "2022-01-26T13:47:51.699810+00:00",
+  "exec_time": 0,
   "estimated_execution_time": 0.0,
-  "path": "/archive/refine_orbit/des_astrometry_2",
-  "expected_asteroids": 0,
-  "processed_asteroids": 794,
-  "filter_type": "dynclass",
-  "filter_value": "KBO",
-  "count_asteroids": 794,
+  "path": "/archive/des/tno/dev/nima/pipeline/examples/orbit_trace_job",
+  "bsp_planetary": {
+    "name": "de435",
+    "filename": "de435.bsp",
+    "absolute_path": "/archive/des/tno/dev/bsp_planetary/de435.bsp"
+  },
+  "leap_seconds": {
+    "name": "naif0012",
+    "filename": "naif0012.tls",
+    "absolute_path": "/archive/des/tno/dev/leap_seconds/naif0012.tls"
+  },
+  "period": [
+    "2012-11-01",
+    "2019-02-01"
+  ],
+  "observatory_location": [
+    289.193583333,
+    -30.16958333,
+    2202.7
+  ],
+  "match_radius": 2,
+  "expected_asteroids": 1,
+  "processed_asteroids": 1,
+  "filter_type": "name",
+  "filter_value": "Eris",
+  "count_asteroids": 1,
   "count_ccds": 0,
   "count_observations": 0,
-  "time_profile": [
-    {
-      "step": "retrieve_asteroids",
-      "start": "2021-11-17T17:13:31.135635+00:00",
-      "end": "2021-11-17T17:13:31.290530+00:00",
-      "exec_time": 0.154895
-    }
-  ],
+  "time_profile": [],
   "traceback": null,
   "error": null
 }

@@ -32,52 +32,62 @@ def write_job_file(path, data):
         json.dump(data, json_file)
 
 
-def read_asteroid_json(path, asteroid_name):
-    import pathlib
+def write_json(filepath, data):
     import json
-
-    alias = asteroid_name.replace(' ', '').replace('_', '')
-    filename = "{}.json".format(alias)
-
-    filepath = pathlib.Path(path, alias, filename)
-
-    if filepath.exists():
-        with open(filepath) as json_file:
-            data = json.load(json_file)
-
-            return data
-    else:
-        return None
-
-
-def write_asteroid_json(path, asteroid_name, data):
-    import pathlib
-    import json
-
-    alias = asteroid_name.replace(' ', '').replace('_', '')
-    filename = "{}.json".format(alias)
-
-    filepath = pathlib.Path(path, filename)
-
-    with open(filepath, 'w') as json_file:
+    import os
+    with open(os.path.join(filepath), 'w') as json_file:
         json.dump(data, json_file)
+
+
+# def read_asteroid_json(path, asteroid_name):
+#     import pathlib
+#     import json
+
+#     alias = asteroid_name.replace(' ', '').replace('_', '')
+#     filename = "{}.json".format(alias)
+
+#     filepath = pathlib.Path(path, alias, filename)
+
+#     if filepath.exists():
+#         with open(filepath) as json_file:
+#             data = json.load(json_file)
+
+#             return data
+#     else:
+#         return None
+
+
+# def write_asteroid_json(path, asteroid_name, data):
+#     import pathlib
+#     import json
+
+#     alias = asteroid_name.replace(' ', '').replace('_', '')
+#     filename = "{}.json".format(alias)
+
+#     filepath = pathlib.Path(path, filename)
+
+#     with open(filepath, 'w') as json_file:
+#         json.dump(data, json_file)
 
 
 def retrieve_asteroids(type, values):
 
     from dao import AsteroidDao
 
-    asteroids = None
+    dao = AsteroidDao()
+
+    asteroids = list()
+
     if type == 'name':
-        asteroids = AsteroidDao().get_asteroids_by_names(
+        asteroids = dao.get_asteroids_by_names(
             names=values.split(';')
         )
     elif type == 'dynclass':
-        asteroids = AsteroidDao().get_asteroids_by_dynclass(
+        asteroids = dao.get_asteroids_by_dynclass(
             dynclass=values
         )
     elif type == 'base_dynclass':
-        asteroids = AsteroidDao().get_asteroids_by_base_dynclass(
+        asteroids = dao.get_asteroids_by_base_dynclass(
             dynclass=values
         )
 

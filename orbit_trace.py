@@ -13,7 +13,7 @@ import humanize
 import parsl
 
 from asteroid import Asteroid
-from library import get_logger, read_inputs, retrieve_asteroids, write_job_file, ingest_observations
+from library import get_logger, read_inputs, retrieve_asteroids, write_job_file, ingest_observations, write_json
 from orbit_trace_apps import observed_positions, theoretical_positions
 from parsl_config import htex_config
 
@@ -54,7 +54,11 @@ job = read_inputs(current_path, 'job.json')
 
 job.update({
     'status': 'Running',
-    'start': t0.isoformat()
+    'start': t0.isoformat(),
+    'end': None,
+    'exec_time': 0,
+    'count_success': 0,
+    'count_failures': 0
 })
 
 log.info('Update Job status to running.')
@@ -103,7 +107,7 @@ try:
         job['filter_value']
     )
 
-    # asteroids = asteroids[0:120]
+    # asteroids = asteroids[0:5]
 
     job.update({'count_asteroids': len(asteroids)})
 
@@ -118,9 +122,7 @@ try:
         'exec_time': step_tdelta.total_seconds()
     }))
 
-    job['processed_asteroids'] = len(asteroids)
-
-    log.info('Asteroids Count: %s' % job['processed_asteroids'])
+    log.info('Asteroids Count: %s' % job['count_asteroids'])
 
     log.info('Retriving Asteroids Finished in %s' %
              humanize.naturaldelta(step_tdelta, minimum_unit='microseconds'))
@@ -136,6 +138,8 @@ try:
 
     count_ccds = 0
     i = 0
+    success_asteroids = list()
+    ccd_ast_failed = 0
     for asteroid in asteroids:
 
         if asteroid['status'] != 'failure':
@@ -154,12 +158,20 @@ try:
             count_ccds += len(ccds)
 
             if len(ccds) == 0:
-                asteroid.update({'status': 'failure', 'ccds': []})
+                asteroid.update({
+                    'status': 'failure',
+                    'ccds': [],
+                    'error': 'Failed during retrieve ccds step because no ccd was found for this asteroid.'})
+                ccd_ast_failed += 1
+
+                a_failed.append(asteroid)
             else:
                 asteroid.update({
                     'ccds': ccds,
                     'path': str(a.path)
                 })
+
+                success_asteroids.append(asteroid)
 
             log.debug('Asteroid: [%s] CCDs: [%s]' %
                       (asteroid['name'], len(asteroid['ccds'])))
@@ -170,6 +182,8 @@ try:
 
         log.debug('Query CCDs: %s/%s' % (i, len(asteroids)))
 
+    asteroids = success_asteroids
+
     step_t1 = datetime.now(tz=timezone.utc)
     step_tdelta = step_t1 - step_t0
 
@@ -178,14 +192,16 @@ try:
         'step': 'retrieve_ccds',
         'start': step_t0.isoformat(),
         'end': step_t1.isoformat(),
-        'exec_time': step_tdelta.total_seconds()
+        'exec_time': step_tdelta.total_seconds(),
+        'ast_success': len(asteroids),
+        'ast_failed': ccd_ast_failed,
     }))
 
     job.update({'count_ccds': count_ccds})
     log.info('CCDs Count: %s' % count_ccds)
 
-    log.info('Retriving CCDs Finished in %s' %
-             humanize.naturaldelta(step_tdelta, minimum_unit='microseconds'))
+    log.info('Retriving CCDs Finished in %s. Asteroids Success [%s] Failed [%s]' % (
+             humanize.naturaldelta(step_tdelta, minimum_unit='microseconds'), len(asteroids), ccd_ast_failed))
 
     # Update Job File
     write_job_file(current_path, job)
@@ -198,6 +214,8 @@ try:
     step_t0 = datetime.now(tz=timezone.utc)
 
     i = 0
+    success_asteroids = list()
+    bsp_ast_failed = 0
     for asteroid in asteroids:
 
         if asteroid['status'] != 'failure':
@@ -218,23 +236,44 @@ try:
                 days_to_expire=BSP_DAYS_TO_EXPIRE
             )
 
-            if have_bsp_jpl:
-                # Recupera o SPKID que será usado na proxima etapa.
-                spkid = a.get_spkid()
+            if have_bsp_jpl and a.bsp_jpl['filename'] is not None:
                 # Recupera o Path para o BSP
                 bsp_path = a.get_bsp_path()
 
+                asteroid.update({'bsp_path': str(bsp_path)})
+
+                # Recupera o SPKID que será usado na proxima etapa.
+                spkid = a.get_spkid()
+
+                if spkid is None:
+                    asteroid.update({
+                        'status': 'failure',
+                        'error': 'It failed during the retrieve bsp jpl step because it could not identify the SPKID.'
+                    })
+                    bsp_ast_failed += 1
+                    a_failed.append(asteroid)
+
+                else:
+                    asteroid.update({'spkid': spkid})
+                    success_asteroids.append(asteroid)
+            else:
+                msg = 'Failed during retrieve bsp from jpl step. '
+                if a.bsp_jpl is not None and a.bsp_jpl['message']:
+                    msg += a.bsp_jpl['message']
+
                 asteroid.update({
-                    'spkid': spkid,
-                    'bsp_path': str(bsp_path)
+                    'status': 'failure',
+                    'error': msg
                 })
 
-            else:
-                asteroid.update({'status': 'failure'})
+                bsp_ast_failed += 1
+                a_failed.append(asteroid)
 
         i += 1
 
         log.debug('BSPs JPL: %s/%s' % (i, len(asteroids)))
+
+    asteroids = success_asteroids
 
     step_t1 = datetime.now(tz=timezone.utc)
     step_tdelta = step_t1 - step_t0
@@ -244,17 +283,24 @@ try:
         'step': 'retrieve_bsp',
         'start': step_t0.isoformat(),
         'end': step_t1.isoformat(),
-        'exec_time': step_tdelta.total_seconds()
+        'exec_time': step_tdelta.total_seconds(),
+        'ast_success': len(asteroids),
+        'ast_failed': bsp_ast_failed,
     }))
 
-    log.info('Retriving BSP JPL Finished %s' %
-             humanize.naturaldelta(step_tdelta, minimum_unit='microseconds'))
+    log.info('Retriving BSP JPL Finished %s. Asteroids Success [%s] Failed [%s]' % (
+             humanize.naturaldelta(step_tdelta, minimum_unit='microseconds'), len(asteroids), bsp_ast_failed))
 
     # Update Job File
     write_job_file(current_path, job)
 
+    # raise Exception("Parou aqui!")
+
     # =========================== Parsl ===========================
     log.info('Parsl Load started')
+
+    step_t0 = datetime.now(tz=timezone.utc)
+
     # Load Parsl Configs
     parsl.clear()
 
@@ -270,19 +316,46 @@ try:
         htex_config.executors[0].provider.scheduler_options += '+AppId = {}\n'.format(
             jobid)
 
-        # Htcondor config with Limited nodes
-        # htex_config.executors[1].provider.channel.script_dir = os.path.join(
-        #     current_path, 'script_dir')
+        # TODO: Este parametro pode vir do config.ini
+        MAX_PARSL_BLOCKS = 400
+        # Alterar a quantidade de CPUs reservadas
+        # de acordo com a quantidade de ccds a serem processados divididos por 2
+        blocks = (job['count_ccds'] // 2) + 1
+        if blocks < MAX_PARSL_BLOCKS:
+            # Mesmo que a etapa Observed Positions seja paralelizada
+            # por ccds que é uma quantidade muito superior que a de asteroids
+            # estou preferindo limitar os cores em paralelos a metade do necessário.
+            # Desta forma evito que o cluster seja todo utilizado por este processo.
+            # e diminui o tempo de espera do Parsl Load para jobs menores.
+            #
+            # Se a quantidade de blocks for maior que o MAX_PARSL_BLOCKS,
+            # será utilizado todos os blocos definidos no parsl_config init_blocks
+            htex_config.executors[0].provider.init_blocks = int(blocks)
+            log.info("Parsl limiting the amount of Blocks to [%s]" % blocks)
 
-        # htex_config.executors[1].provider.scheduler_options += '+AppId = {}\n'.format(
-        #     jobid)
+        job.update({
+            'parsl_init_blocks': htex_config.executors[0].provider.init_blocks
+        })
+
     except:
         # Considera que é uma execução local
         pass
 
     parsl.load(htex_config)
 
-    log.info('Parsl Load finished')
+    step_t1 = datetime.now(tz=timezone.utc)
+    step_tdelta = step_t1 - step_t0
+
+    # Update Job time profile
+    job['time_profile'].append(dict({
+        'step': 'parsl_load',
+        'start': step_t0.isoformat(),
+        'end': step_t1.isoformat(),
+        'exec_time': step_tdelta.total_seconds(),
+    }))
+
+    log.info('Parsl Load finished in %s.' %
+             (humanize.naturaldelta(step_tdelta, minimum_unit='microseconds')))
 
     # =========================== Theoretical ===========================
     # Calculando as posições teoricas
@@ -304,7 +377,7 @@ try:
             is_done.append(f.done())
         log.debug('Theoretical Positions running: %s/%s' %
                   (is_done.count(True), len(futures)))
-        time.sleep(60)
+        time.sleep(30)
 
     # asteroids = [i.result() for i in futures]
     asteroids = list()
@@ -314,7 +387,8 @@ try:
         if asteroid['status'] == 'failure':
             a_failed.append(asteroid)
             theo_ast_failed += 1
-            log.warning('Asteroid [%s] %s' % (asteroid['error']))
+            log.warning('Asteroid [%s] %s' %
+                        (asteroid['name'], asteroid['error']))
         else:
             asteroids.append(asteroid)
 
@@ -330,7 +404,9 @@ try:
         'step': 'theoretical_positions',
         'start': step_t0.isoformat(),
         'end': step_t1.isoformat(),
-        'exec_time': step_tdelta.total_seconds()
+        'exec_time': step_tdelta.total_seconds(),
+        'ast_success': len(asteroids),
+        'ast_failed': theo_ast_failed,
     }))
 
     # Update Job File
@@ -360,6 +436,10 @@ try:
                     radius=MATCH_RADIUS,
                 ))
                 idx += 1
+                log.debug('Submited: Asteroid [%s] CCD: [%s] IDX:[%s]' % (
+                    asteroid['name'], ccd['id'], idx))
+
+    log.debug('All Obeserved Positions Jobs are Submited')
 
     # Monitoramento parcial das tasks
     is_done = list()
@@ -369,7 +449,7 @@ try:
             is_done.append(f.done())
         log.debug('Observed Positions running: %s/%s' %
                   (is_done.count(True), len(futures)))
-        time.sleep(1)
+        time.sleep(30)
 
     results = dict({})
     for task in futures:
@@ -440,7 +520,9 @@ try:
         'step': 'observed_positions',
         'start': step_t0.isoformat(),
         'end': step_t1.isoformat(),
-        'exec_time': step_tdelta.total_seconds()
+        'exec_time': step_tdelta.total_seconds(),
+        'ast_success': len(asteroids),
+        'ast_failed': obs_pos_ast_failed,
     }))
 
     log.info('Observations Count: %s' % count_observations)
@@ -449,6 +531,10 @@ try:
 
     # Update Job File
     write_job_file(current_path, job)
+
+    # TODO: Fim da utilização do Cluster, liberar os cores utilizados.
+    parsl.clear()
+    # parsl.HighThroughputExecutor.shutdown()
 
     # =========================== Ingest Observations ===========================
     # Ingere as posições observadas no banco de dados
@@ -492,7 +578,9 @@ try:
         'step': 'ingest_observations',
         'start': step_t0.isoformat(),
         'end': step_t1.isoformat(),
-        'exec_time': step_tdelta.total_seconds()
+        'exec_time': step_tdelta.total_seconds(),
+        'ast_success': len(asteroids),
+        'ast_failed': ingested_ast_failed,
     }))
 
     log.info('Observations Ingested: %s' % ingested_obs)
@@ -502,24 +590,61 @@ try:
     # Update Job File
     write_job_file(current_path, job)
 
-    log.debug(asteroids)
-
-    raise Exception('parou aqui')
-
-    # TODO: Faltou adicionar os time profiles e resultados das etapas no Json do Asteroid.
-    # TODO: Talvez guardar um arquivo com os ccds
-    # TODO: Completar o Job
-
-    # =========================== Asteroids Json ===========================
+    # =========================== Consolidate ===========================
     log.info('Write Asteroid Data in json started')
-    futures = list()
+
+    step_t0 = datetime.now(tz=timezone.utc)
+
     for asteroid in asteroids:
-        asteroid.update({'status': 'completed'})
-        futures.append(write_asteroid_data(asteroid))
+        # asteroid.update({'status': 'completed'})
+        a = Asteroid(
+            id=asteroid['id'],
+            name=asteroid['name'],
+            number=asteroid['number'],
+            base_dynclass=asteroid['base_dynclass'],
+            dynclass=asteroid['dynclass'],
+        )
 
-    asteroids = [i.result() for i in futures]
+        a.set_log('orbit_trace')
 
-    log.info('Write Asteroid Data in json Finish %s' %
+        # TODO: Faltou adicionar os time profiles da etapa Observed Positions.
+        a.ot_theo_pos = asteroid['ot_theo_pos']
+        # a.ot_obs_pos = asteroid['ot_obs_pos']
+        a.ot_ing_obs = asteroid['ot_ing_obs']
+
+        a.write_asteroid_json()
+
+    job.update({'count_success': len(asteroids)})
+
+    # Escreve um Json com os asteroids que falharam.
+    job.update({'count_failures': 0})
+    if len(a_failed) > 0:
+        job.update({'count_failures': len(a_failed)})
+
+        log.info('Write Asteroids with failed status in json')
+        failed_json = pathlib.Path(current_path, 'asteroids_failed.json')
+        write_json(failed_json, a_failed)
+
+    # TODO: Criar um heartbeat.
+
+    # TODO: Apenas para Debug
+    # Não é necessário, remover no futuro
+    log.info('Write Asteroids with success status in json')
+    success_json = pathlib.Path(current_path, 'asteroids_success.json')
+    write_json(success_json, asteroids)
+
+    step_t1 = datetime.now(tz=timezone.utc)
+    step_tdelta = step_t1 - step_t0
+
+    # Update Job time profile
+    job['time_profile'].append(dict({
+        'step': 'consolidate',
+        'start': step_t0.isoformat(),
+        'end': step_t1.isoformat(),
+        'exec_time': step_tdelta.total_seconds(),
+    }))
+
+    log.info('Consolidate Finish in %s' %
              humanize.naturaldelta(step_tdelta, minimum_unit='microseconds'))
 
     # Status 3 = Completed
@@ -546,7 +671,8 @@ finally:
 
     job.update({
         'end': t1.isoformat(),
-        'exec_time': tdelta.total_seconds()
+        'exec_time': tdelta.total_seconds(),
+        'h_exec_time': str(tdelta)
     })
 
     log.info('Update Job status.')
@@ -555,11 +681,60 @@ finally:
     # Altera o path de execução para o path original
     os.chdir(original_path)
 
-    log.info('Execution Time: %s' % tdelta)
-    log.info('Identification of DES object is done!.')
+    log.info('Asteroids Success: [%s] Failure: [%s]' %
+             (job['count_success'], job['count_failures']))
 
+    log.info('Identification of DES object is done!.')
+    log.info('Execution Time: %s' % tdelta)
 
 # Como Utilízar:
 # cd /archive/des/tno/dev/nima/pipeline
 # source env.sh
 # python orbit_trace.py 1 /archive/des/tno/dev/nima/pipeline/examples/orbit_trace_job
+
+
+# 1999 LE31
+# 2001 BL41
+# 2001 XZ255
+
+
+# 2022-01-26 17:26:07,654 [WARNING] Asteroid [2001 BL41] Failed on retrive asteroids BSP from JPL.
+# ================================================================================
+
+# Toolkit version: CSPICE66
+
+# SPICE(SPKINSUFFDATA) --
+
+# Insufficient ephemeris data has been loaded to compute the position of 2049036 relative to 0 (SOLAR SYSTEM BARYCENTER) at the ephemeris epoch 2013 FEB 11 09:06:01.735.
+
+# spkpos_c --> SPKPOS --> SPKEZP --> SPKAPO --> SPKGPS
+
+# ================================================================================
+
+
+# [WARNING] Asteroid [1999 LE31] Failed on retrive asteroids BSP from JPL.
+# ================================================================================
+
+# Toolkit version: CSPICE66
+
+# SPICE(EMPTYSTRING) --
+
+# String "targ" has length zero.
+
+# spkpos_c
+
+# ================================================================================
+
+
+# [WARNING] Asteroid [2001 XZ255] Failed on retrive asteroids BSP from JPL.
+# ================================================================================
+
+# Toolkit version: CSPICE66
+
+# SPICE(EMPTYSTRING) --
+
+# String "targ" has length zero.
+
+# spkpos_c
+
+# ================================================================================

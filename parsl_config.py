@@ -14,12 +14,13 @@ htex_config = Config(
             address=address_by_query(),
             max_workers=1,
             provider=CondorProvider(
-                # init_blocks=500,
-                # min_blocks=1,
-                # max_blocks=500,
-                init_blocks=3,
+                # Total de blocks no condor 896
+                init_blocks=600,
                 min_blocks=1,
-                max_blocks=6,
+                max_blocks=896,
+                # init_blocks=3,
+                # min_blocks=1,
+                # max_blocks=6,
                 parallelism=1,
                 scheduler_options='+AppType = "TNO"\n+AppName = "Orbit Trace"\n',
                 worker_init="source /archive/des/tno/dev/nima/pipeline/env.sh",
