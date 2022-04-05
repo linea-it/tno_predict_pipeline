@@ -81,6 +81,42 @@ def get_bsp_from_jpl(identifier, initial_date, final_date, email, directory):
             "It was not able to download the bsp file for object.")
 
 
+# def findSPKID(bsp):
+#     """Search the spk id of a small Solar System object from bsp file
+
+#     Args:
+#         bsp (str): File path for bsp jpl file.
+
+#     Returns:
+#         str: Spk id of Object
+#     """
+
+#     bsp = [bsp]
+#     spice.furnsh(bsp)
+
+#     i = 0
+#     kind = 'spk'
+#     fillen = 256
+#     typlen = 33
+#     srclen = 256
+#     keys = ['Target SPK ID   :', 'ASTEROID_SPK_ID =']
+#     n = len(keys[0])
+
+#     name, kind, source, loc = spice.kdata(i, kind, fillen, typlen, srclen)
+#     flag = False
+#     spk = ''
+#     while not flag:
+#         try:
+#             m, header, flag = spice.dafec(loc, 1)
+#             row = header[0]
+#             if row[:n] in keys:
+#                 spk = row[n:].strip()
+#                 break
+#         except:
+#             break
+#     return spk
+
+
 def findSPKID(bsp):
     """Search the spk id of a small Solar System object from bsp file
 
@@ -88,21 +124,19 @@ def findSPKID(bsp):
         bsp (str): File path for bsp jpl file.
 
     Returns:
-        str: Spk id of Object
+        str: Spk id of Object or None
     """
 
-    bsp = [bsp]
-    spice.furnsh(bsp)
-
-    i = 0
+    spice.furnsh([bsp])
     kind = 'spk'
+
     fillen = 256
     typlen = 33
     srclen = 256
     keys = ['Target SPK ID   :', 'ASTEROID_SPK_ID =']
     n = len(keys[0])
 
-    name, kind, source, loc = spice.kdata(i, kind, fillen, typlen, srclen)
+    name, kind, source, loc = spice.kdata(0, kind, fillen, typlen, srclen)
     flag = False
     spk = ''
     while not flag:
@@ -114,4 +148,10 @@ def findSPKID(bsp):
                 break
         except:
             break
-    return spk
+
+    spice.kclear()
+
+    if spk == '':
+        return None
+
+    return str(spk)

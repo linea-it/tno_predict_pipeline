@@ -4,9 +4,10 @@ import collections
 import configparser
 import datetime
 import os
-
+from sqlalchemy.pool import NullPool
 import warnings
 from sqlalchemy import exc as sa_exc
+
 
 class Dao():
 
@@ -25,7 +26,8 @@ class Dao():
                 config['AdmDatabase']['DbHost'],
                 config['AdmDatabase']['DbPort'],
                 config['AdmDatabase']['DbName']
-            )
+            ),
+            poolclass=NullPool
         )
 
         return engine
@@ -53,7 +55,7 @@ class Dao():
             warnings.simplefilter("ignore", category=sa_exc.SAWarning)
 
             engine = self.get_db_engine()
-            with engine.connect() as con:        
+            with engine.connect() as con:
 
                 queryset = con.execute(stm)
 
@@ -69,7 +71,7 @@ class Dao():
             warnings.simplefilter("ignore", category=sa_exc.SAWarning)
 
             engine = self.get_db_engine()
-            with engine.connect() as con:   
+            with engine.connect() as con:
 
                 queryset = con.execute(stm).fetchone()
 
@@ -110,6 +112,24 @@ class Dao():
             https://stackoverflow.com/questions/13125236/sqlalchemy-psycopg2-and-postgresql-copy
         """
 
+        # with warnings.catch_warnings():
+        #     warnings.simplefilter("ignore", category=sa_exc.SAWarning)
+
+        #     engine = self.get_db_engine()
+        #     with engine.raw_connection() as connection:
+        #         try:
+        #             cursor = connection.cursor()
+        #             cursor.copy_expert(sql, data)
+        #             connection.commit()
+
+        #             cursor.close()
+        #             return cursor.rowcount
+        #         except Exception as e:
+        #             connection.rollback()
+        #             raise (e)
+        #         finally:
+        #             connection.close()
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=sa_exc.SAWarning)
 
@@ -126,8 +146,6 @@ class Dao():
                 raise (e)
             finally:
                 connection.close()
-
-                
 
 
 class AsteroidDao(Dao):
@@ -146,7 +164,8 @@ class AsteroidDao(Dao):
 
     def get_asteroids_by_base_dynclass(self, dynclass):
 
-        stm = select(self.tbl.c).where(and_(self.tbl.c.base_dynclass == dynclass))
+        stm = select(self.tbl.c).where(
+            and_(self.tbl.c.base_dynclass == dynclass))
 
         rows = self.fetch_all_dict(stm)
 
@@ -158,7 +177,7 @@ class AsteroidDao(Dao):
 
         rows = self.fetch_all_dict(stm)
 
-        return rows        
+        return rows
 
     def ccds_by_asteroid(self, asteroid_name):
 
@@ -205,7 +224,7 @@ class ObservationDao(Dao):
         stm = delete(self.tbl).where(and_(self.tbl.c.name == name))
 
         engine = self.get_db_engine()
-        with engine.connect() as con:   
+        with engine.connect() as con:
             rows = con.execute(stm)
 
             return rows
@@ -217,6 +236,7 @@ class ObservationDao(Dao):
         rows = self.fetch_all_dict(stm)
 
         return rows
+
 
 class AstrometryJobDao(Dao):
     def __init__(self):
@@ -230,7 +250,6 @@ class AstrometryJobDao(Dao):
 
         return self.fetch_one_dict(stm)
 
-
     def update_job(self, job):
 
         stm = update(self.tbl).where(and_(self.tbl.c.id == int(job['id']))).values(
@@ -241,12 +260,12 @@ class AstrometryJobDao(Dao):
             error=job['error'],
             traceback=job['traceback'],
         )
-        
-        engine = self.get_db_engine()
-        with engine.connect() as con:   
-            return  con.execute(stm)
 
-        
+        engine = self.get_db_engine()
+        with engine.connect() as con:
+            return con.execute(stm)
+
+
 class OccultationDao(Dao):
     def __init__(self):
         super(OccultationDao, self).__init__()
@@ -258,7 +277,7 @@ class OccultationDao(Dao):
         stm = delete(self.tbl).where(and_(self.tbl.c.name == name))
 
         engine = self.get_db_engine()
-        with engine.connect() as con:   
+        with engine.connect() as con:
             rows = con.execute(stm)
 
             return rows
@@ -268,18 +287,19 @@ class OccultationDao(Dao):
         stm = delete(self.tbl).where(
             and_(
                 self.tbl.c.asteroid_id == id,
-                self.tbl.c.date_time.between(str(start_period), str(end_period))
-                )
+                self.tbl.c.date_time.between(
+                    str(start_period), str(end_period))
             )
+        )
 
         engine = self.get_db_engine()
-        with engine.connect() as con:   
+        with engine.connect() as con:
             rows = con.execute(stm)
 
             return rows
 
     def import_occultations(self, data):
-            
+
         # Sql Copy com todas as colunas que vão ser importadas e o formato do csv.
         sql = "COPY %s (name, number, date_time, ra_star_candidate, dec_star_candidate, ra_target, dec_target, closest_approach, position_angle, velocity, delta, g, j, h, k, long, loc_t, off_ra, off_dec, proper_motion, ct, multiplicity_flag, e_ra, e_dec, pmra, pmdec, ra_star_deg, dec_star_deg, ra_target_deg, dec_target_deg, asteroid_id ) FROM STDIN with (FORMAT CSV, DELIMITER '|', HEADER);" % self.tbl
 
