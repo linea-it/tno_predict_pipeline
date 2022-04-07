@@ -5,7 +5,14 @@ import json
 import datetime
 from datetime import datetime as dt, timezone
 from external_inputs.asteroid_external_inputs import AsteroidExternalInputs
-from library import has_expired, ra2HMS, dec2DMS, ra_hms_to_deg, dec_hms_to_deg, date_to_jd
+from library import (
+    has_expired,
+    ra2HMS,
+    dec2DMS,
+    ra_hms_to_deg,
+    dec_hms_to_deg,
+    date_to_jd,
+)
 from dao import ObservationDao, OccultationDao, AsteroidDao
 import csv
 import pandas as pd
@@ -35,10 +42,10 @@ def serialize(obj):
     return obj.__dict__
 
 
-class Asteroid():
+class Asteroid:
 
     __log = None
-    __BSP_START_PERIOD = '2012-01-01'
+    __BSP_START_PERIOD = "2012-01-01"
     __BSP_YEARS_AHEAD = 1
     __BSP_YEARS_BEHIND = 1
     __BSP_DAYS_TO_EXPIRE = 60
@@ -70,10 +77,10 @@ class Asteroid():
         self.id = id
         self.name = name
 
-        if number is not None and number != '-' and number != '':
+        if number is not None and number != "-" and number != "":
             self.number = str(number)
 
-        self.alias = name.replace(' ', '').replace('_', '')
+        self.alias = name.replace(" ", "").replace("_", "")
 
         self.base_dynclass = base_dynclass
         self.dynclass = dynclass
@@ -92,7 +99,7 @@ class Asteroid():
         return dict(
             (key, value)
             for (key, value) in self.__dict__.items()
-            if key.startswith('_') is False
+            if key.startswith("_") is False
         )
 
     def set_log(self, logname):
@@ -108,16 +115,15 @@ class Asteroid():
     def get_base_path(self):
         # Carrega as variaveis de configuração do arquivo config.ini
         config = configparser.ConfigParser()
-        config.read(os.path.join(os.environ['EXECUTION_PATH'], 'config.ini'))
-        ASTEROID_PATH = config['DEFAULT'].get('AsteroidPath')
+        config.read(os.path.join(os.environ["EXECUTION_PATH"], "config.ini"))
+        ASTEROID_PATH = config["DEFAULT"].get("AsteroidPath")
         return ASTEROID_PATH
 
     def get_jpl_email(self):
         # Carrega as variaveis de configuração do arquivo config.ini
         config = configparser.ConfigParser()
-        config.read(os.path.join(os.environ['EXECUTION_PATH'], 'config.ini'))
-        JPL_EMAIL = config['DEFAULT'].get(
-            'JplEmail', 'sso-portal@linea.gov.br')
+        config.read(os.path.join(os.environ["EXECUTION_PATH"], "config.ini"))
+        JPL_EMAIL = config["DEFAULT"].get("JplEmail", "sso-portal@linea.gov.br")
         return JPL_EMAIL
 
     def get_or_create_dir(self):
@@ -127,7 +133,8 @@ class Asteroid():
             name ([type]): [description]
         """
         asteroid_path = pathlib.Path.joinpath(
-            pathlib.Path(self.get_base_path()), self.alias)
+            pathlib.Path(self.get_base_path()), self.alias
+        )
 
         pathlib.Path(asteroid_path).mkdir(parents=True, exist_ok=True)
 
@@ -156,39 +163,35 @@ class Asteroid():
 
         d = self.to_dict()
 
-        with open(filepath, 'w') as json_file:
+        with open(filepath, "w") as json_file:
             json.dump(d, json_file, default=serialize)
 
     def set_condor_job(self, procid, clusterid):
-        self.condor_job = dict({
-            'proc_id': procid,
-            'cluster_id': clusterid
-        })
+        self.condor_job = dict({"proc_id": procid, "cluster_id": clusterid})
 
         self.write_asteroid_json()
 
     def get_bsp_path(self):
-        filename = '{}.bsp'.format(self.alias)
-        filepath = pathlib.Path.joinpath(
-            pathlib.Path(self.path), filename)
+        filename = "{}.bsp".format(self.alias)
+        filepath = pathlib.Path.joinpath(pathlib.Path(self.path), filename)
 
         return filepath
 
     def calculate_bsp_start_period(self, start_period):
 
         years_behind = int(self.__BSP_YEARS_BEHIND)
-        start_period = dt.strptime(str(start_period), '%Y-%m-%d')
-        start = dt(year=start_period.year-years_behind, month=1, day=1)
+        start_period = dt.strptime(str(start_period), "%Y-%m-%d")
+        start = dt(year=start_period.year - years_behind, month=1, day=1)
 
-        return start.strftime('%Y-%m-%d')
+        return start.strftime("%Y-%m-%d")
 
     def calculate_bsp_end_period(self, end_period):
 
         years_ahead = int(self.__BSP_YEARS_AHEAD)
-        end_period = dt.strptime(str(end_period), '%Y-%m-%d')
-        end = dt(year=end_period.year+years_ahead, month=12, day=31)
+        end_period = dt.strptime(str(end_period), "%Y-%m-%d")
+        end = dt(year=end_period.year + years_ahead, month=12, day=31)
 
-        return end.strftime('%Y-%m-%d')
+        return end.strftime("%Y-%m-%d")
 
     def download_jpl_bsp(self, end_period, force=False, start_period=None):
         """
@@ -225,30 +228,27 @@ class Asteroid():
 
         try:
             bsp_path = get_bsp_from_jpl(
-                self.name,
-                start_period,
-                end_period,
-                self.get_jpl_email(),
-                self.path
+                self.name, start_period, end_period, self.get_jpl_email(), self.path
             )
 
             t1 = dt.now(tz=timezone.utc)
             tdelta = t1 - t0
 
-            data = dict({
-                'source': 'JPL',
-                'filename': bsp_path.name,
-                'size': bsp_path.stat().st_size,
-                'start_period': start_period,
-                'end_period': end_period,
-                'dw_start': t0.isoformat(),
-                'dw_finish': t1.isoformat(),
-                'dw_time': tdelta.total_seconds(),
-                'downloaded_in_this_run': True
-            })
+            data = dict(
+                {
+                    "source": "JPL",
+                    "filename": bsp_path.name,
+                    "size": bsp_path.stat().st_size,
+                    "start_period": start_period,
+                    "end_period": end_period,
+                    "dw_start": t0.isoformat(),
+                    "dw_finish": t1.isoformat(),
+                    "dw_time": tdelta.total_seconds(),
+                    "downloaded_in_this_run": True,
+                }
+            )
 
-            log.info(
-                "Asteroid [%s] BSP Downloaded in %s" % (self.name, tdelta))
+            log.info("Asteroid [%s] BSP Downloaded in %s" % (self.name, tdelta))
 
             return data
         except Exception as e:
@@ -275,7 +275,7 @@ class Asteroid():
             bsp_jpl = None
 
             # Verificar insformações sobre o BSP no Json
-            if self.bsp_jpl is not None and 'filename' in self.bsp_jpl:
+            if self.bsp_jpl is not None and "filename" in self.bsp_jpl:
                 # Já existe Informações de BSP baixado
 
                 # Path para o arquivo BSP
@@ -292,27 +292,36 @@ class Asteroid():
                         # BSP Está na validade
                         # Verificar se o periodo do bsp atende ao periodo da execução.
                         bsp_start_period = dt.strptime(
-                            self.bsp_jpl['start_period'], '%Y-%m-%d').date()
+                            self.bsp_jpl["start_period"], "%Y-%m-%d"
+                        ).date()
                         exec_start_period = dt.strptime(
-                            str(start_period), '%Y-%m-%d').date()
+                            str(start_period), "%Y-%m-%d"
+                        ).date()
 
                         bsp_end_period = dt.strptime(
-                            self.bsp_jpl['end_period'], '%Y-%m-%d').date()
+                            self.bsp_jpl["end_period"], "%Y-%m-%d"
+                        ).date()
                         exec_end_period = dt.strptime(
-                            str(end_period), '%Y-%m-%d').date()
+                            str(end_period), "%Y-%m-%d"
+                        ).date()
 
-                        if bsp_start_period < exec_start_period and bsp_end_period > exec_end_period:
+                        if (
+                            bsp_start_period < exec_start_period
+                            and bsp_end_period > exec_end_period
+                        ):
                             # O BSP contem dados para um periodo maior que o necessário para execução
                             # BSP que já existe atente todos os critérios não será necessário um novo Download.
                             bsp_jpl = self.bsp_jpl
-                            bsp_jpl['downloaded_in_this_run'] = False
+                            bsp_jpl["downloaded_in_this_run"] = False
                             log.info(
-                                "Pre-existing BSP is still valid and will be reused.")
+                                "Pre-existing BSP is still valid and will be reused."
+                            )
 
             if bsp_jpl is None:
                 # Fazer um novo Download do BSP
                 bsp_jpl = self.download_jpl_bsp(
-                    start_period=start_period, end_period=end_period, force=True)
+                    start_period=start_period, end_period=end_period, force=True
+                )
 
                 # Toda vez que baixar um novo BSP recalcular o SPKID
                 self.spkid = None
@@ -324,10 +333,8 @@ class Asteroid():
 
                 return True
             else:
-                msg = 'BSP JPL file was not created.'
-                self.bsp_jpl = dict({
-                    'message': msg
-                })
+                msg = "BSP JPL file was not created."
+                self.bsp_jpl = dict({"message": msg})
 
                 log.warning("Asteroid [%s] %s" % (self.name, msg))
                 return False
@@ -335,9 +342,7 @@ class Asteroid():
         except Exception as e:
             msg = "Failed in the BSP JPL stage. Error: %s" % e
 
-            self.bsp_jpl = dict({
-                'message': msg
-            })
+            self.bsp_jpl = dict({"message": msg})
             log.error("Asteroid [%s] %s" % (self.name, msg))
 
             return False
@@ -346,10 +351,9 @@ class Asteroid():
             # Atualiza o Json do Asteroid
             tp1 = dt.now(tz=timezone.utc)
 
-            self.bsp_jpl.update({
-                'tp_start': tp0.isoformat(),
-                'tp_finish': tp1.isoformat()
-            })
+            self.bsp_jpl.update(
+                {"tp_start": tp0.isoformat(), "tp_finish": tp1.isoformat()}
+            )
 
             self.write_asteroid_json()
 
@@ -366,7 +370,7 @@ class Asteroid():
                 name=self.name,
                 number=self.number,
                 asteroid_path=self.path,
-                logname=self.__logname
+                logname=self.__logname,
             )
 
             if days_to_expire is None:
@@ -375,12 +379,16 @@ class Asteroid():
             orb_ele = None
 
             # Verificar insformações sobre Orbital Elements no Json
-            if self.orbital_elements is not None and 'filename' in self.orbital_elements:
+            if (
+                self.orbital_elements is not None
+                and "filename" in self.orbital_elements
+            ):
                 # Já existe Informações de Orbital Elements
 
                 # Path para o arquivo
                 orb_path = pathlib.Path.joinpath(
-                    pathlib.Path(self.path), self.orbital_elements['filename'])
+                    pathlib.Path(self.path), self.orbital_elements["filename"]
+                )
 
                 # Verificar se o arquivo Orbital Elements existe
                 if orb_path.exists():
@@ -390,9 +398,10 @@ class Asteroid():
                     if not has_expired(dt_creation, days_to_expire):
                         # O Arquivo existe e esta na validade não será necessário um novo Download.
                         orb_ele = self.orbital_elements
-                        orb_ele['downloaded_in_this_run'] = False
+                        orb_ele["downloaded_in_this_run"] = False
                         log.info(
-                            "Pre-existing Orbital Elements is still valid and will be reused.")
+                            "Pre-existing Orbital Elements is still valid and will be reused."
+                        )
 
             if orb_ele is None:
                 # Fazer um novo Download
@@ -409,10 +418,8 @@ class Asteroid():
 
                 return True
             else:
-                msg = 'Orbital Elements file was not created.'
-                self.orbital_elements = dict({
-                    'message': msg
-                })
+                msg = "Orbital Elements file was not created."
+                self.orbital_elements = dict({"message": msg})
 
                 log.warning("Asteroid [%s] %s" % (self.name, msg))
 
@@ -421,9 +428,7 @@ class Asteroid():
         except Exception as e:
             msg = "Failed in the Orbital Elements stage. Error: %s" % e
 
-            self.orbital_elements = dict({
-                'message': msg
-            })
+            self.orbital_elements = dict({"message": msg})
             log.error("Asteroid [%s] %s" % (self.name, msg))
 
             return False
@@ -433,10 +438,9 @@ class Asteroid():
 
             tp1 = dt.now(tz=timezone.utc)
 
-            self.orbital_elements.update({
-                'tp_start': tp0.isoformat(),
-                'tp_finish': tp1.isoformat()
-            })
+            self.orbital_elements.update(
+                {"tp_start": tp0.isoformat(), "tp_finish": tp1.isoformat()}
+            )
 
             self.write_asteroid_json()
 
@@ -453,7 +457,7 @@ class Asteroid():
                 name=self.name,
                 number=self.number,
                 asteroid_path=self.path,
-                logname=self.__logname
+                logname=self.__logname,
             )
 
             if days_to_expire is None:
@@ -462,12 +466,13 @@ class Asteroid():
             observations = None
 
             # Verificar insformações sobre Observations no Json
-            if self.observations is not None and 'filename' in self.observations:
+            if self.observations is not None and "filename" in self.observations:
                 # Já existe Informações
 
                 # Path para o arquivo
                 obs_path = pathlib.Path.joinpath(
-                    pathlib.Path(self.path), self.observations['filename'])
+                    pathlib.Path(self.path), self.observations["filename"]
+                )
 
                 # Verificar se o arquivo Observations existe
                 if obs_path.exists():
@@ -477,9 +482,10 @@ class Asteroid():
                     if not has_expired(dt_creation, days_to_expire):
                         # O Arquivo existe e esta na validade não será necessário um novo Download.
                         observations = self.observations
-                        observations['downloaded_in_this_run'] = False
+                        observations["downloaded_in_this_run"] = False
                         log.info(
-                            "Pre-existing Observations is still valid and will be reused.")
+                            "Pre-existing Observations is still valid and will be reused."
+                        )
 
             if observations is None:
                 # Fazer um novo Download
@@ -488,8 +494,7 @@ class Asteroid():
 
                 if observations is None:
                     # Tenta no MPC
-                    observations = aei.download_mpc_orbital_elements(
-                        force=True)
+                    observations = aei.download_mpc_orbital_elements(force=True)
 
             if observations is not None:
                 # Atualiza os dados
@@ -497,10 +502,8 @@ class Asteroid():
 
                 return True
             else:
-                msg = 'Observations file was not created.'
-                self.observations = dict({
-                    'message': msg
-                })
+                msg = "Observations file was not created."
+                self.observations = dict({"message": msg})
 
                 log.warning("Asteroid [%s] %s" % (self.name, msg))
 
@@ -509,9 +512,7 @@ class Asteroid():
         except Exception as e:
             msg = "Failed in the Observations stage. Error: %s" % e
 
-            self.observations = dict({
-                'message': msg
-            })
+            self.observations = dict({"message": msg})
             log.error("Asteroid [%s] %s" % (self.name, msg))
 
             return False
@@ -521,15 +522,14 @@ class Asteroid():
 
             tp1 = dt.now(tz=timezone.utc)
 
-            self.observations.update({
-                'tp_start': tp0.isoformat(),
-                'tp_finish': tp1.isoformat()
-            })
+            self.observations.update(
+                {"tp_start": tp0.isoformat(), "tp_finish": tp1.isoformat()}
+            )
 
             self.write_asteroid_json()
 
     def get_des_observations_path(self):
-        filename = '{}.txt'.format(self.alias)
+        filename = "{}.txt".format(self.alias)
 
         return pathlib.Path.joinpath(pathlib.Path(self.path), filename)
 
@@ -556,37 +556,42 @@ class Asteroid():
         rows = ""
         rows_count = len(observations)
         for obs in observations:
-            row = dict({
-                'ra': ra2HMS(obs['ra'], 4).ljust(15),
-                'dec': dec2DMS(obs['dec'], 3).ljust(16),
-                'mag': "{:.3f}".format(obs['mag_psf']).ljust(8),
-                'mjd': "{:.8f}".format(float(obs['date_jd'])).ljust(18),
-                'obs': 'W84'.ljust(5),
-                'cat': 'V'
-            })
+            row = dict(
+                {
+                    "ra": ra2HMS(obs["ra"], 4).ljust(15),
+                    "dec": dec2DMS(obs["dec"], 3).ljust(16),
+                    "mag": "{:.3f}".format(obs["mag_psf"]).ljust(8),
+                    "mjd": "{:.8f}".format(float(obs["date_jd"])).ljust(18),
+                    "obs": "W84".ljust(5),
+                    "cat": "V",
+                }
+            )
 
-            rows += ("{ra}{dec}{mag}{mjd}{obs}{cat}\n".format(**row))
+            rows += "{ra}{dec}{mag}{mjd}{obs}{cat}\n".format(**row)
 
         log.info("Creating DES observations file.")
-        with open(fpath, 'w') as f:
+        with open(fpath, "w") as f:
             f.write(rows)
 
         t1 = dt.now(tz=timezone.utc)
         tdelta = t1 - t0
 
         if fpath.exists():
-            log.info("DES observations Count [%s] File. [%s]" % (
-                rows_count, str(fpath)))
+            log.info(
+                "DES observations Count [%s] File. [%s]" % (rows_count, str(fpath))
+            )
 
-            return dict({
-                'filename': fpath.name,
-                'size': fpath.stat().st_size,
-                'count': rows_count,
-                'start': t0.isoformat(),
-                'finish': t1.isoformat(),
-                'exec_time': tdelta.total_seconds(),
-                'generated_in_this_run': True
-            })
+            return dict(
+                {
+                    "filename": fpath.name,
+                    "size": fpath.stat().st_size,
+                    "count": rows_count,
+                    "start": t0.isoformat(),
+                    "finish": t1.isoformat(),
+                    "exec_time": tdelta.total_seconds(),
+                    "generated_in_this_run": True,
+                }
+            )
 
         else:
             return None
@@ -602,12 +607,16 @@ class Asteroid():
 
             observations = None
             # Verificar insformações sobre DES Observations no Json
-            if self.des_observations is not None and 'filename' in self.des_observations:
+            if (
+                self.des_observations is not None
+                and "filename" in self.des_observations
+            ):
                 # Já existe Informações
 
                 # Path para o arquivo
                 obs_path = pathlib.Path.joinpath(
-                    pathlib.Path(self.path), self.des_observations['filename'])
+                    pathlib.Path(self.path), self.des_observations["filename"]
+                )
 
                 # Verificar se o arquivo DES Observations existe
                 if obs_path.exists():
@@ -617,9 +626,10 @@ class Asteroid():
                     if not has_expired(dt_creation, days_to_expire):
                         # O Arquivo existe e esta na validade não será necessário uma novo consulta.
                         observations = self.des_observations
-                        observations['generated_in_this_run'] = False
+                        observations["generated_in_this_run"] = False
                         log.info(
-                            "Pre-existing DES Observations is still valid and will be reused.")
+                            "Pre-existing DES Observations is still valid and will be reused."
+                        )
 
             if observations is None:
                 # Fazer uma nova Consulta
@@ -629,16 +639,14 @@ class Asteroid():
                 # Atualiza os dados
                 self.des_observations = observations
 
-                if self.des_observations['count'] > 0:
+                if self.des_observations["count"] > 0:
                     return True
                 else:
                     return False
 
             else:
-                msg = 'DES Observations file was not created.'
-                self.des_observations = dict({
-                    'message': msg
-                })
+                msg = "DES Observations file was not created."
+                self.des_observations = dict({"message": msg})
                 return False
 
                 log.warning("Asteroid [%s] %s" % (self.name, msg))
@@ -646,9 +654,7 @@ class Asteroid():
         except Exception as e:
             msg = "Failed in the DES Observations stage. Error: %s" % e
 
-            self.des_observations = dict({
-                'message': msg
-            })
+            self.des_observations = dict({"message": msg})
             log.error("Asteroid [%s] %s" % (self.name, msg))
 
             return False
@@ -656,10 +662,9 @@ class Asteroid():
         finally:
             tp1 = dt.now(tz=timezone.utc)
 
-            self.des_observations.update({
-                'tp_start': tp0.isoformat(),
-                'tp_finish': tp1.isoformat()
-            })
+            self.des_observations.update(
+                {"tp_start": tp0.isoformat(), "tp_finish": tp1.isoformat()}
+            )
 
             # Atualiza o Json do Asteroid
             self.write_asteroid_json()
@@ -674,13 +679,13 @@ class Asteroid():
         removed_files = list()
 
         ignore_files = [
-            '{}.json'.format(self.alias),
-            '{}.bsp'.format(self.alias),
-            '{}.eq0'.format(self.alias),
-            '{}.eqm'.format(self.alias),
-            '{}.rwo'.format(self.alias),
-            '{}.rwm'.format(self.alias),
-            '{}.txt'.format(self.alias),
+            "{}.json".format(self.alias),
+            "{}.bsp".format(self.alias),
+            "{}.eq0".format(self.alias),
+            "{}.eqm".format(self.alias),
+            "{}.rwo".format(self.alias),
+            "{}.rwm".format(self.alias),
+            "{}.txt".format(self.alias),
         ]
 
         # Se a opção remove_inputs for verdadeira
@@ -723,7 +728,8 @@ class Asteroid():
             t0 = dt.now(tz=timezone.utc)
 
             predict_table_path = pathlib.Path(
-                self.path, self.predict_occultation['filename'])
+                self.path, self.predict_occultation["filename"]
+            )
 
             dao = OccultationDao()
 
@@ -738,55 +744,105 @@ class Asteroid():
                 header=None,
                 skiprows=1,
                 names=[
-                    "occultation_date", "ra_star_candidate", "dec_star_candidate", "ra_object", "dec_object",
-                    "ca", "pa", "vel", "delta", "g", "j", "h", "k", "long", "loc_t", "off_ra", "off_de", "pm",
-                    "ct", "f", "e_ra", "e_de", "pmra", "pmde"
-                ]
+                    "occultation_date",
+                    "ra_star_candidate",
+                    "dec_star_candidate",
+                    "ra_object",
+                    "dec_object",
+                    "ca",
+                    "pa",
+                    "vel",
+                    "delta",
+                    "g",
+                    "j",
+                    "h",
+                    "k",
+                    "long",
+                    "loc_t",
+                    "off_ra",
+                    "off_de",
+                    "pm",
+                    "ct",
+                    "f",
+                    "e_ra",
+                    "e_de",
+                    "pmra",
+                    "pmde",
+                ],
             )
 
             # Adiciona as colunas de coordenadas de target e star convertidas para degrees.
-            df['ra_target_deg'] = df['ra_object'].apply(ra_hms_to_deg)
-            df['dec_target_deg'] = df['dec_object'].apply(dec_hms_to_deg)
-            df['ra_star_deg'] = df['ra_star_candidate'].apply(ra_hms_to_deg)
-            df['dec_star_deg'] = df['dec_star_candidate'].apply(dec_hms_to_deg)
+            df["ra_target_deg"] = df["ra_object"].apply(ra_hms_to_deg)
+            df["dec_target_deg"] = df["dec_object"].apply(dec_hms_to_deg)
+            df["ra_star_deg"] = df["ra_star_candidate"].apply(ra_hms_to_deg)
+            df["dec_star_deg"] = df["dec_star_candidate"].apply(dec_hms_to_deg)
 
             # Adicionar colunas para asteroid id, name e number
-            df['name'] = self.name
-            df['number'] = self.number
-            df['asteroid_id'] = self.id
+            df["name"] = self.name
+            df["number"] = self.number
+            df["asteroid_id"] = self.id
 
             # Remover valores como -- ou -
-            df['ct'] = df['ct'].str.replace('--', '')
-            df['f'] = df['f'].str.replace('-', '')
+            df["ct"] = df["ct"].str.replace("--", "")
+            df["f"] = df["f"].str.replace("-", "")
 
             # Altera o nome das colunas
-            df = df.rename(columns={
-                'occultation_date': 'date_time',
-                'ra_object': 'ra_target',
-                'dec_object': 'dec_target',
-                'ca': 'closest_approach',
-                'pa': 'position_angle',
-                'vel': 'velocity',
-                'off_de': 'off_dec',
-                'pm': 'proper_motion',
-                'f': 'multiplicity_flag',
-                'e_de': 'e_dec',
-                'pmde': 'pmdec'
-            })
+            df = df.rename(
+                columns={
+                    "occultation_date": "date_time",
+                    "ra_object": "ra_target",
+                    "dec_object": "dec_target",
+                    "ca": "closest_approach",
+                    "pa": "position_angle",
+                    "vel": "velocity",
+                    "off_de": "off_dec",
+                    "pm": "proper_motion",
+                    "f": "multiplicity_flag",
+                    "e_de": "e_dec",
+                    "pmde": "pmdec",
+                }
+            )
 
             # Altera a ordem das colunas para coincidir com a da tabela
-            df = df.reindex(columns=[
-                "name", "number", "date_time", "ra_star_candidate", "dec_star_candidate", "ra_target", "dec_target",
-                "closest_approach", "position_angle", "velocity", "delta", "g", "j", "h", "k", "long", "loc_t", "off_ra",
-                "off_dec", "proper_motion", "ct", "multiplicity_flag", "e_ra", "e_dec", "pmra", "pmdec", "ra_star_deg",
-                "dec_star_deg", "ra_target_deg", "dec_target_deg", "asteroid_id"])
+            df = df.reindex(
+                columns=[
+                    "name",
+                    "number",
+                    "date_time",
+                    "ra_star_candidate",
+                    "dec_star_candidate",
+                    "ra_target",
+                    "dec_target",
+                    "closest_approach",
+                    "position_angle",
+                    "velocity",
+                    "delta",
+                    "g",
+                    "j",
+                    "h",
+                    "k",
+                    "long",
+                    "loc_t",
+                    "off_ra",
+                    "off_dec",
+                    "proper_motion",
+                    "ct",
+                    "multiplicity_flag",
+                    "e_ra",
+                    "e_dec",
+                    "pmra",
+                    "pmdec",
+                    "ra_star_deg",
+                    "dec_star_deg",
+                    "ra_target_deg",
+                    "dec_target_deg",
+                    "asteroid_id",
+                ]
+            )
 
             data = StringIO()
             df.to_csv(
-                data,
-                sep="|",
-                header=True,
-                index=False,
+                data, sep="|", header=True, index=False,
             )
             data.seek(0)
 
@@ -799,21 +855,21 @@ class Asteroid():
             t1 = dt.now(tz=timezone.utc)
             tdelta = t1 - t0
 
-            self.ingest_occultations = dict({
-                'count': rowcount,
-                'start': t0.isoformat(),
-                'finish': t1.isoformat(),
-                'exec_time': tdelta.total_seconds(),
-            })
+            self.ingest_occultations = dict(
+                {
+                    "count": rowcount,
+                    "start": t0.isoformat(),
+                    "finish": t1.isoformat(),
+                    "exec_time": tdelta.total_seconds(),
+                }
+            )
 
             return rowcount
 
         except Exception as e:
             msg = "Failed in Ingest Occultations stage. Error: %s" % e
 
-            self.ingest_occultations = dict({
-                'message': msg
-            })
+            self.ingest_occultations = dict({"message": msg})
             log.error("Asteroid [%s] %s" % (self.name, msg))
 
             return 0
@@ -826,122 +882,138 @@ class Asteroid():
 
         log = self.get_log()
 
-        a = dict({
-            'ast_id': self.id,
-            'name': self.name,
-            'base_dynclass': self.base_dynclass,
-        })
+        a = dict(
+            {"ast_id": self.id, "name": self.name, "base_dynclass": self.base_dynclass,}
+        )
 
         try:
             messages = list()
             exec_time = 0
 
             if self.des_observations is not None:
-                if 'message' in self.des_observations:
-                    messages.append(self.des_observations['message'])
+                if "message" in self.des_observations:
+                    messages.append(self.des_observations["message"])
                 else:
-                    a.update({
-                        'des_obs': self.des_observations['count'],
-                        'des_obs_start': self.des_observations['start'],
-                        'des_obs_finish': self.des_observations['finish'],
-                        'des_obs_exec_time': self.des_observations['exec_time'],
-                        'des_obs_gen_run': self.des_observations['generated_in_this_run'],
-                        'des_obs_tp_start': self.des_observations['tp_start'],
-                        'des_obs_tp_finish': self.des_observations['tp_finish'],
-                    })
+                    a.update(
+                        {
+                            "des_obs": self.des_observations["count"],
+                            "des_obs_start": self.des_observations["start"],
+                            "des_obs_finish": self.des_observations["finish"],
+                            "des_obs_exec_time": self.des_observations["exec_time"],
+                            "des_obs_gen_run": self.des_observations[
+                                "generated_in_this_run"
+                            ],
+                            "des_obs_tp_start": self.des_observations["tp_start"],
+                            "des_obs_tp_finish": self.des_observations["tp_finish"],
+                        }
+                    )
 
-                    exec_time += float(self.des_observations['exec_time'])
+                    exec_time += float(self.des_observations["exec_time"])
 
             if self.bsp_jpl is not None:
-                if 'message' in self.bsp_jpl:
-                    messages.append(self.bsp_jpl['message'])
+                if "message" in self.bsp_jpl:
+                    messages.append(self.bsp_jpl["message"])
                 else:
-                    a.update({
-                        'bsp_jpl_start': self.bsp_jpl['dw_start'],
-                        'bsp_jpl_finish': self.bsp_jpl['dw_finish'],
-                        'bsp_jpl_dw_time': self.bsp_jpl['dw_time'],
-                        'bsp_jpl_dw_run': self.bsp_jpl['downloaded_in_this_run'],
-                        'bsp_jpl_tp_start': self.bsp_jpl['tp_start'],
-                        'bsp_jpl_tp_finish': self.bsp_jpl['tp_finish'],
-                    })
+                    a.update(
+                        {
+                            "bsp_jpl_start": self.bsp_jpl["dw_start"],
+                            "bsp_jpl_finish": self.bsp_jpl["dw_finish"],
+                            "bsp_jpl_dw_time": self.bsp_jpl["dw_time"],
+                            "bsp_jpl_dw_run": self.bsp_jpl["downloaded_in_this_run"],
+                            "bsp_jpl_tp_start": self.bsp_jpl["tp_start"],
+                            "bsp_jpl_tp_finish": self.bsp_jpl["tp_finish"],
+                        }
+                    )
 
-                    exec_time += float(self.bsp_jpl['dw_time'])
+                    exec_time += float(self.bsp_jpl["dw_time"])
 
             if self.observations is not None:
-                if 'message' in self.observations:
-                    messages.append(self.observations['message'])
+                if "message" in self.observations:
+                    messages.append(self.observations["message"])
                 else:
-                    a.update({
-                        'obs_source': self.observations['source'],
-                        'obs_start': self.observations['dw_start'],
-                        'obs_finish': self.observations['dw_finish'],
-                        'obs_dw_time': self.observations['dw_time'],
-                        'obs_dw_run': self.observations['downloaded_in_this_run'],
-                        'obs_tp_start': self.observations['tp_start'],
-                        'obs_tp_finish': self.observations['tp_finish'],
-                    })
+                    a.update(
+                        {
+                            "obs_source": self.observations["source"],
+                            "obs_start": self.observations["dw_start"],
+                            "obs_finish": self.observations["dw_finish"],
+                            "obs_dw_time": self.observations["dw_time"],
+                            "obs_dw_run": self.observations["downloaded_in_this_run"],
+                            "obs_tp_start": self.observations["tp_start"],
+                            "obs_tp_finish": self.observations["tp_finish"],
+                        }
+                    )
 
-                    exec_time += float(self.observations['dw_time'])
+                    exec_time += float(self.observations["dw_time"])
 
             if self.orbital_elements is not None:
-                if 'message' in self.orbital_elements:
-                    messages.append(self.orbital_elements['message'])
+                if "message" in self.orbital_elements:
+                    messages.append(self.orbital_elements["message"])
                 else:
-                    a.update({
-                        'orb_ele_source': self.orbital_elements['source'],
-                        'orb_ele_start': self.orbital_elements['dw_start'],
-                        'orb_ele_finish': self.orbital_elements['dw_finish'],
-                        'orb_ele_dw_time': self.orbital_elements['dw_time'],
-                        'orb_ele_dw_run': self.orbital_elements['downloaded_in_this_run'],
-                        'orb_ele_tp_start': self.orbital_elements['tp_start'],
-                        'orb_ele_tp_finish': self.orbital_elements['tp_finish'],
-                    })
+                    a.update(
+                        {
+                            "orb_ele_source": self.orbital_elements["source"],
+                            "orb_ele_start": self.orbital_elements["dw_start"],
+                            "orb_ele_finish": self.orbital_elements["dw_finish"],
+                            "orb_ele_dw_time": self.orbital_elements["dw_time"],
+                            "orb_ele_dw_run": self.orbital_elements[
+                                "downloaded_in_this_run"
+                            ],
+                            "orb_ele_tp_start": self.orbital_elements["tp_start"],
+                            "orb_ele_tp_finish": self.orbital_elements["tp_finish"],
+                        }
+                    )
 
-                    exec_time += float(self.orbital_elements['dw_time'])
+                    exec_time += float(self.orbital_elements["dw_time"])
 
             if self.refine_orbit is not None:
-                if 'message' in self.refine_orbit:
-                    messages.append(self.refine_orbit['message'])
+                if "message" in self.refine_orbit:
+                    messages.append(self.refine_orbit["message"])
                 else:
-                    a.update({
-                        'ref_orb_start': self.refine_orbit['start'],
-                        'ref_orb_finish': self.refine_orbit['finish'],
-                        'ref_orb_exec_time': self.refine_orbit['exec_time'],
-                    })
+                    a.update(
+                        {
+                            "ref_orb_start": self.refine_orbit["start"],
+                            "ref_orb_finish": self.refine_orbit["finish"],
+                            "ref_orb_exec_time": self.refine_orbit["exec_time"],
+                        }
+                    )
 
-                    exec_time += float(self.refine_orbit['exec_time'])
+                    exec_time += float(self.refine_orbit["exec_time"])
 
             if self.predict_occultation is not None:
-                if 'message' in self.predict_occultation:
-                    messages.append(self.predict_occultation['message'])
+                if "message" in self.predict_occultation:
+                    messages.append(self.predict_occultation["message"])
                 else:
-                    a.update({
-                        'pre_occ_count': self.predict_occultation['count'],
-                        'pre_occ_start': self.predict_occultation['start'],
-                        'pre_occ_finish': self.predict_occultation['finish'],
-                        'pre_occ_exec_time': self.predict_occultation['exec_time'],
-                    })
+                    a.update(
+                        {
+                            "pre_occ_count": self.predict_occultation["count"],
+                            "pre_occ_start": self.predict_occultation["start"],
+                            "pre_occ_finish": self.predict_occultation["finish"],
+                            "pre_occ_exec_time": self.predict_occultation["exec_time"],
+                        }
+                    )
 
-                    exec_time += float(self.predict_occultation['exec_time'])
+                    exec_time += float(self.predict_occultation["exec_time"])
 
             if self.ingest_occultations is not None:
-                if 'message' in self.ingest_occultations:
-                    messages.append(self.ingest_occultations['message'])
+                if "message" in self.ingest_occultations:
+                    messages.append(self.ingest_occultations["message"])
                 else:
-                    a.update({
-                        'ing_occ_count': self.ingest_occultations['count'],
-                        'ing_occ_start': self.ingest_occultations['start'],
-                        'ing_occ_finish': self.ingest_occultations['finish'],
-                        'ing_occ_exec_time': self.ingest_occultations['exec_time'],
-                    })
+                    a.update(
+                        {
+                            "ing_occ_count": self.ingest_occultations["count"],
+                            "ing_occ_start": self.ingest_occultations["start"],
+                            "ing_occ_finish": self.ingest_occultations["finish"],
+                            "ing_occ_exec_time": self.ingest_occultations["exec_time"],
+                        }
+                    )
 
-                    exec_time += float(self.ingest_occultations['exec_time'])
+                    exec_time += float(self.ingest_occultations["exec_time"])
 
             # Tempo total de execução do Asteroid
-            a['exec_time'] = exec_time
+            a["exec_time"] = exec_time
 
             # Junta todas as mensagens em uma string separada por ;
-            a['messages'] = ';'.join(messages)
+            a["messages"] = ";".join(messages)
 
         except Exception as e:
             msg = "Failed to consolidate asteroid results. Error: %s" % e
@@ -961,19 +1033,19 @@ class Asteroid():
         removed_files = list()
 
         ignore_files = [
-            '{}.json'.format(self.alias),
-            '{}.bsp'.format(self.alias),
-            '{}.eq0'.format(self.alias),
-            '{}.eqm'.format(self.alias),
-            '{}.rwo'.format(self.alias),
-            '{}.rwm'.format(self.alias),
-            '{}.txt'.format(self.alias),
-            'diff_bsp-ni.png',
-            'diff_nima_jpl_Dec.png',
-            'diff_nima_jpl_RA.png',
-            'omc_sep_recent.png',
-            'omc_sep_all.png',
-            'occultation_table.csv',
+            "{}.json".format(self.alias),
+            "{}.bsp".format(self.alias),
+            "{}.eq0".format(self.alias),
+            "{}.eqm".format(self.alias),
+            "{}.rwo".format(self.alias),
+            "{}.rwm".format(self.alias),
+            "{}.txt".format(self.alias),
+            "diff_bsp-ni.png",
+            "diff_nima_jpl_Dec.png",
+            "diff_nima_jpl_RA.png",
+            "omc_sep_recent.png",
+            "omc_sep_all.png",
+            "occultation_table.csv",
         ]
 
         path = pathlib.Path(self.path)
@@ -999,29 +1071,29 @@ class Asteroid():
         tp0 = dt.now(tz=timezone.utc)
 
         try:
-            log.info("Retriving CCDs")
+            # log.info("Retriving CCDs")
 
             dao = AsteroidDao()
             ccds = dao.ccds_by_asteroid(self.name)
 
             for ccd in ccds:
-                ccd.update({
-                    'date_obs': str(ccd['date_obs']),
-                    'date_jd': date_to_jd(ccd['date_obs'], ccd['exptime'], leap_second),
-                })
+                ccd.update(
+                    {
+                        "date_obs": str(ccd["date_obs"]),
+                        "date_jd": date_to_jd(
+                            ccd["date_obs"], ccd["exptime"], leap_second
+                        ),
+                    }
+                )
 
-            self.ot_query_ccds.update({
-                'count': len(ccds)
-            })
+            self.ot_query_ccds.update({"count": len(ccds)})
 
             return ccds
 
         except Exception as e:
             msg = "Failed in the Retriving CCDs stage. Error: %s" % e
 
-            self.ot_query_ccds = dict({
-                'message': msg
-            })
+            self.ot_query_ccds = dict({"message": msg})
             log.error("Asteroid [%s] %s" % (self.name, msg))
 
         finally:
@@ -1029,17 +1101,16 @@ class Asteroid():
 
             tp1 = dt.now(tz=timezone.utc)
 
-            self.ot_query_ccds.update({
-                'tp_start': tp0.isoformat(),
-                'tp_finish': tp1.isoformat()
-            })
+            self.ot_query_ccds.update(
+                {"tp_start": tp0.isoformat(), "tp_finish": tp1.isoformat()}
+            )
 
             self.write_asteroid_json()
 
     def get_spkid(self):
         log = self.get_log()
 
-        if self.spkid is None or self.spkid is '':
+        if self.spkid is None or self.spkid is "":
             bsp_path = self.get_bsp_path()
 
             if self.bsp_jpl is not None and bsp_path.exists():
@@ -1048,14 +1119,14 @@ class Asteroid():
                 try:
                     spkid = findSPKID(str(bsp_path))
 
-                    if spkid is None or spkid is '':
+                    if spkid is None or spkid is "":
                         self.spkid = None
                         log.warning(
-                            "Asteroid [%s] Could not identify the SPKID." % self.name)
+                            "Asteroid [%s] Could not identify the SPKID." % self.name
+                        )
                     else:
                         self.spkid = spkid
-                        log.info("Asteroid [%s] SPKID [%s]." %
-                                 (self.name, self.spkid))
+                        log.info("Asteroid [%s] SPKID [%s]." % (self.name, self.spkid))
 
                 except Exception as e:
                     self.spkid = None

@@ -1,1 +1,356 @@
-[{"id": 1087140, "name": "Sarpedon", "number": "2223", "base_dynclass": "Trojan", "dynclass": "Trojan", "status": "running", "ccds": [{"id": 1267026573, "date_obs": "2013-10-29 03:46:32.731567+00:00", "exptime": 90.0, "path": "/archive/des/public/finalcut/Y5A1/r3651/20131028/D00247966/p01/cat", "filename": "D00247966_g_c36_r3651p01_red-fullcat.fits", "date_jd": 2456594.6578502096, "date_et": 436290505.44059163, "geocentric_positions": [489432375.5842031, 342493952.0694367, -21834463.063063942], "topocentric_positions": [489427316.5004149, 342491751.88650256, -21831268.51461392], "theoretical_coordinates": [34.98358346155365, -2.0930123077368012], "observed_coordinates": [34.98357514283793, -2.0930159344044923], "observed_omc": [-0.029927397365647722, -0.013056003687772488], "magpsf": 11.391514778137207, "magerrpsf": 0.0024566147476434708}, {"id": 1312122031, "date_obs": "2013-11-12 05:32:28.154242+00:00", "exptime": 90.0, "path": "/archive/des/public/finalcut/Y5A1/r3651/20131111/D00253195/p02/cat", "filename": "D00253195_z_c26_r3651p02_red-fullcat.fits", "date_jd": 2456608.7314083097, "date_et": 437506460.8606427, "geocentric_positions": [506983888.563265, 332335940.3788751, -27892901.38504686], "topocentric_positions": [506981458.66811585, 332330985.1557027, -27889710.51582424], "theoretical_coordinates": [33.24520806762157, -2.634190244166845], "observed_coordinates": [33.24521444579539, -2.6341867743803307], "observed_omc": [0.022937162934177042, 0.012491231452393947], "magpsf": 10.663569450378418, "magerrpsf": 0.0020964762661606073}], "path": "/lustre/t1/tmp/tno/asteroids/Sarpedon", "bsp_path": "/lustre/t1/tmp/tno/asteroids/Sarpedon/Sarpedon.bsp", "spkid": "2002223", "ot_theo_pos": {"tp_start": "2022-01-27T17:12:38.237258+00:00", "tp_finish": "2022-01-27T17:12:56.746454+00:00"}, "observations": [{"name": "Rhesus", "asteroid_id": 1086945, "ccd_id": 1267026573, "date_obs": "2013-10-29 03:46:32.731567+00:00", "date_jd": 2456594.6578502096, "ra": 34.98357514283793, "dec": -2.0930159344044923, "offset_ra": -0.029927397365647722, "offset_dec": -0.013056003687772488, "mag_psf": 11.391514778137207, "mag_psf_err": 0.0024566147476434708}, {"name": "Rhesus", "asteroid_id": 1086945, "ccd_id": 1312122031, "date_obs": "2013-11-12 05:32:28.154242+00:00", "date_jd": 2456608.7314083097, "ra": 33.24521444579539, "dec": -2.6341867743803307, "offset_ra": 0.022937162934177042, "offset_dec": 0.012491231452393947, "mag_psf": 10.663569450378418, "mag_psf_err": 0.0020964762661606073}], "observations_count": 2, "ot_ing_obs": {"count": 2, "filename": "des_obs.csv", "tp_start": "2022-01-27T17:15:54.891882+00:00", "tp_finish": "2022-01-27T17:15:55.122916+00:00"}}, {"id": 1086947, "name": "Rhipeus", "number": "188847", "base_dynclass": "Trojan", "dynclass": "Trojan", "status": "running", "ccds": [{"id": 1267026573, "date_obs": "2013-10-29 03:46:32.731567+00:00", "exptime": 90.0, "path": "/archive/des/public/finalcut/Y5A1/r3651/20131028/D00247966/p01/cat", "filename": "D00247966_g_c36_r3651p01_red-fullcat.fits", "date_jd": 2456594.6578502096, "date_et": 436290505.44059163, "geocentric_positions": [489432375.5842031, 342493952.0694367, -21834463.063063942], "topocentric_positions": [489427316.5004149, 342491751.88650256, -21831268.51461392], "theoretical_coordinates": [34.98358346155365, -2.0930123077368012], "observed_coordinates": [34.98357514283793, -2.0930159344044923], "observed_omc": [-0.029927397365647722, -0.013056003687772488], "magpsf": 11.391514778137207, "magerrpsf": 0.0024566147476434708}, {"id": 1312122031, "date_obs": "2013-11-12 05:32:28.154242+00:00", "exptime": 90.0, "path": "/archive/des/public/finalcut/Y5A1/r3651/20131111/D00253195/p02/cat", "filename": "D00253195_z_c26_r3651p02_red-fullcat.fits", "date_jd": 2456608.7314083097, "date_et": 437506460.8606427, "geocentric_positions": [506983888.563265, 332335940.3788751, -27892901.38504686], "topocentric_positions": [506981458.66811585, 332330985.1557027, -27889710.51582424], "theoretical_coordinates": [33.24520806762157, -2.634190244166845], "observed_coordinates": [33.24521444579539, -2.6341867743803307], "observed_omc": [0.022937162934177042, 0.012491231452393947], "magpsf": 10.663569450378418, "magerrpsf": 0.0020964762661606073}], "path": "/lustre/t1/tmp/tno/asteroids/Rhipeus", "bsp_path": "/lustre/t1/tmp/tno/asteroids/Rhipeus/Rhipeus.bsp", "spkid": "2188847", "ot_theo_pos": {"tp_start": "2022-01-27T17:12:38.450548+00:00", "tp_finish": "2022-01-27T17:12:57.843153+00:00"}, "observations": [{"name": "Rhesus", "asteroid_id": 1086945, "ccd_id": 1267026573, "date_obs": "2013-10-29 03:46:32.731567+00:00", "date_jd": 2456594.6578502096, "ra": 34.98357514283793, "dec": -2.0930159344044923, "offset_ra": -0.029927397365647722, "offset_dec": -0.013056003687772488, "mag_psf": 11.391514778137207, "mag_psf_err": 0.0024566147476434708}, {"name": "Rhesus", "asteroid_id": 1086945, "ccd_id": 1312122031, "date_obs": "2013-11-12 05:32:28.154242+00:00", "date_jd": 2456608.7314083097, "ra": 33.24521444579539, "dec": -2.6341867743803307, "offset_ra": 0.022937162934177042, "offset_dec": 0.012491231452393947, "mag_psf": 10.663569450378418, "mag_psf_err": 0.0020964762661606073}], "observations_count": 2, "ot_ing_obs": {"count": 2, "filename": "des_obs.csv", "tp_start": "2022-01-27T17:15:55.123003+00:00", "tp_finish": "2022-01-27T17:15:55.292043+00:00"}}, {"id": 1086945, "name": "Rhesus", "number": "9142", "base_dynclass": "Trojan", "dynclass": "Trojan", "status": "running", "ccds": [{"id": 1267026573, "date_obs": "2013-10-29 03:46:32.731567+00:00", "exptime": 90.0, "path": "/archive/des/public/finalcut/Y5A1/r3651/20131028/D00247966/p01/cat", "filename": "D00247966_g_c36_r3651p01_red-fullcat.fits", "date_jd": 2456594.6578502096, "date_et": 436290505.44059163, "geocentric_positions": [489432375.5842031, 342493952.0694367, -21834463.063063942], "topocentric_positions": [489427316.5004149, 342491751.88650256, -21831268.51461392], "theoretical_coordinates": [34.98358346155365, -2.0930123077368012], "observed_coordinates": [34.98357514283793, -2.0930159344044923], "observed_omc": [-0.029927397365647722, -0.013056003687772488], "magpsf": 11.391514778137207, "magerrpsf": 0.0024566147476434708}, {"id": 1312122031, "date_obs": "2013-11-12 05:32:28.154242+00:00", "exptime": 90.0, "path": "/archive/des/public/finalcut/Y5A1/r3651/20131111/D00253195/p02/cat", "filename": "D00253195_z_c26_r3651p02_red-fullcat.fits", "date_jd": 2456608.7314083097, "date_et": 437506460.8606427, "geocentric_positions": [506983888.563265, 332335940.3788751, -27892901.38504686], "topocentric_positions": [506981458.66811585, 332330985.1557027, -27889710.51582424], "theoretical_coordinates": [33.24520806762157, -2.634190244166845], "observed_coordinates": [33.24521444579539, -2.6341867743803307], "observed_omc": [0.022937162934177042, 0.012491231452393947], "magpsf": 10.663569450378418, "magerrpsf": 0.0020964762661606073}], "path": "/lustre/t1/tmp/tno/asteroids/Rhesus", "bsp_path": "/lustre/t1/tmp/tno/asteroids/Rhesus/Rhesus.bsp", "spkid": "2009142", "ot_theo_pos": {"tp_start": "2022-01-27T17:12:46.445766+00:00", "tp_finish": "2022-01-27T17:13:03.705347+00:00"}, "observations": [{"name": "Rhesus", "asteroid_id": 1086945, "ccd_id": 1267026573, "date_obs": "2013-10-29 03:46:32.731567+00:00", "date_jd": 2456594.6578502096, "ra": 34.98357514283793, "dec": -2.0930159344044923, "offset_ra": -0.029927397365647722, "offset_dec": -0.013056003687772488, "mag_psf": 11.391514778137207, "mag_psf_err": 0.0024566147476434708}, {"name": "Rhesus", "asteroid_id": 1086945, "ccd_id": 1312122031, "date_obs": "2013-11-12 05:32:28.154242+00:00", "date_jd": 2456608.7314083097, "ra": 33.24521444579539, "dec": -2.6341867743803307, "offset_ra": 0.022937162934177042, "offset_dec": 0.012491231452393947, "mag_psf": 10.663569450378418, "mag_psf_err": 0.0020964762661606073}], "observations_count": 2, "ot_ing_obs": {"count": 2, "filename": "des_obs.csv", "tp_start": "2022-01-27T17:15:55.292081+00:00", "tp_finish": "2022-01-27T17:15:55.483724+00:00"}}]
+[
+    {
+        "id": 1087140,
+        "name": "Sarpedon",
+        "number": "2223",
+        "base_dynclass": "Trojan",
+        "dynclass": "Trojan",
+        "status": "running",
+        "ccds": [
+            {
+                "id": 1267026573,
+                "date_obs": "2013-10-29 03:46:32.731567+00:00",
+                "exptime": 90.0,
+                "path": "/archive/des/public/finalcut/Y5A1/r3651/20131028/D00247966/p01/cat",
+                "filename": "D00247966_g_c36_r3651p01_red-fullcat.fits",
+                "date_jd": 2456594.6578502096,
+                "date_et": 436290505.44059163,
+                "geocentric_positions": [
+                    489432375.5842031,
+                    342493952.0694367,
+                    -21834463.063063942
+                ],
+                "topocentric_positions": [
+                    489427316.5004149,
+                    342491751.88650256,
+                    -21831268.51461392
+                ],
+                "theoretical_coordinates": [
+                    34.98358346155365,
+                    -2.0930123077368012
+                ],
+                "observed_coordinates": [
+                    34.98357514283793,
+                    -2.0930159344044923
+                ],
+                "observed_omc": [
+                    -0.029927397365647722,
+                    -0.013056003687772488
+                ],
+                "magpsf": 11.391514778137207,
+                "magerrpsf": 0.0024566147476434708
+            },
+            {
+                "id": 1312122031,
+                "date_obs": "2013-11-12 05:32:28.154242+00:00",
+                "exptime": 90.0,
+                "path": "/archive/des/public/finalcut/Y5A1/r3651/20131111/D00253195/p02/cat",
+                "filename": "D00253195_z_c26_r3651p02_red-fullcat.fits",
+                "date_jd": 2456608.7314083097,
+                "date_et": 437506460.8606427,
+                "geocentric_positions": [
+                    506983888.563265,
+                    332335940.3788751,
+                    -27892901.38504686
+                ],
+                "topocentric_positions": [
+                    506981458.66811585,
+                    332330985.1557027,
+                    -27889710.51582424
+                ],
+                "theoretical_coordinates": [
+                    33.24520806762157,
+                    -2.634190244166845
+                ],
+                "observed_coordinates": [
+                    33.24521444579539,
+                    -2.6341867743803307
+                ],
+                "observed_omc": [
+                    0.022937162934177042,
+                    0.012491231452393947
+                ],
+                "magpsf": 10.663569450378418,
+                "magerrpsf": 0.0020964762661606073
+            }
+        ],
+        "path": "/lustre/t1/tmp/tno/asteroids/Sarpedon",
+        "bsp_path": "/lustre/t1/tmp/tno/asteroids/Sarpedon/Sarpedon.bsp",
+        "spkid": "2002223",
+        "ot_theo_pos": {
+            "tp_start": "2022-01-27T17:12:38.237258+00:00",
+            "tp_finish": "2022-01-27T17:12:56.746454+00:00"
+        },
+        "observations": [
+            {
+                "name": "Rhesus",
+                "asteroid_id": 1086945,
+                "ccd_id": 1267026573,
+                "date_obs": "2013-10-29 03:46:32.731567+00:00",
+                "date_jd": 2456594.6578502096,
+                "ra": 34.98357514283793,
+                "dec": -2.0930159344044923,
+                "offset_ra": -0.029927397365647722,
+                "offset_dec": -0.013056003687772488,
+                "mag_psf": 11.391514778137207,
+                "mag_psf_err": 0.0024566147476434708
+            },
+            {
+                "name": "Rhesus",
+                "asteroid_id": 1086945,
+                "ccd_id": 1312122031,
+                "date_obs": "2013-11-12 05:32:28.154242+00:00",
+                "date_jd": 2456608.7314083097,
+                "ra": 33.24521444579539,
+                "dec": -2.6341867743803307,
+                "offset_ra": 0.022937162934177042,
+                "offset_dec": 0.012491231452393947,
+                "mag_psf": 10.663569450378418,
+                "mag_psf_err": 0.0020964762661606073
+            }
+        ],
+        "observations_count": 2,
+        "ot_ing_obs": {
+            "count": 2,
+            "filename": "des_obs.csv",
+            "tp_start": "2022-01-27T17:15:54.891882+00:00",
+            "tp_finish": "2022-01-27T17:15:55.122916+00:00"
+        }
+    },
+    {
+        "id": 1086947,
+        "name": "Rhipeus",
+        "number": "188847",
+        "base_dynclass": "Trojan",
+        "dynclass": "Trojan",
+        "status": "running",
+        "ccds": [
+            {
+                "id": 1267026573,
+                "date_obs": "2013-10-29 03:46:32.731567+00:00",
+                "exptime": 90.0,
+                "path": "/archive/des/public/finalcut/Y5A1/r3651/20131028/D00247966/p01/cat",
+                "filename": "D00247966_g_c36_r3651p01_red-fullcat.fits",
+                "date_jd": 2456594.6578502096,
+                "date_et": 436290505.44059163,
+                "geocentric_positions": [
+                    489432375.5842031,
+                    342493952.0694367,
+                    -21834463.063063942
+                ],
+                "topocentric_positions": [
+                    489427316.5004149,
+                    342491751.88650256,
+                    -21831268.51461392
+                ],
+                "theoretical_coordinates": [
+                    34.98358346155365,
+                    -2.0930123077368012
+                ],
+                "observed_coordinates": [
+                    34.98357514283793,
+                    -2.0930159344044923
+                ],
+                "observed_omc": [
+                    -0.029927397365647722,
+                    -0.013056003687772488
+                ],
+                "magpsf": 11.391514778137207,
+                "magerrpsf": 0.0024566147476434708
+            },
+            {
+                "id": 1312122031,
+                "date_obs": "2013-11-12 05:32:28.154242+00:00",
+                "exptime": 90.0,
+                "path": "/archive/des/public/finalcut/Y5A1/r3651/20131111/D00253195/p02/cat",
+                "filename": "D00253195_z_c26_r3651p02_red-fullcat.fits",
+                "date_jd": 2456608.7314083097,
+                "date_et": 437506460.8606427,
+                "geocentric_positions": [
+                    506983888.563265,
+                    332335940.3788751,
+                    -27892901.38504686
+                ],
+                "topocentric_positions": [
+                    506981458.66811585,
+                    332330985.1557027,
+                    -27889710.51582424
+                ],
+                "theoretical_coordinates": [
+                    33.24520806762157,
+                    -2.634190244166845
+                ],
+                "observed_coordinates": [
+                    33.24521444579539,
+                    -2.6341867743803307
+                ],
+                "observed_omc": [
+                    0.022937162934177042,
+                    0.012491231452393947
+                ],
+                "magpsf": 10.663569450378418,
+                "magerrpsf": 0.0020964762661606073
+            }
+        ],
+        "path": "/lustre/t1/tmp/tno/asteroids/Rhipeus",
+        "bsp_path": "/lustre/t1/tmp/tno/asteroids/Rhipeus/Rhipeus.bsp",
+        "spkid": "2188847",
+        "ot_theo_pos": {
+            "tp_start": "2022-01-27T17:12:38.450548+00:00",
+            "tp_finish": "2022-01-27T17:12:57.843153+00:00"
+        },
+        "observations": [
+            {
+                "name": "Rhesus",
+                "asteroid_id": 1086945,
+                "ccd_id": 1267026573,
+                "date_obs": "2013-10-29 03:46:32.731567+00:00",
+                "date_jd": 2456594.6578502096,
+                "ra": 34.98357514283793,
+                "dec": -2.0930159344044923,
+                "offset_ra": -0.029927397365647722,
+                "offset_dec": -0.013056003687772488,
+                "mag_psf": 11.391514778137207,
+                "mag_psf_err": 0.0024566147476434708
+            },
+            {
+                "name": "Rhesus",
+                "asteroid_id": 1086945,
+                "ccd_id": 1312122031,
+                "date_obs": "2013-11-12 05:32:28.154242+00:00",
+                "date_jd": 2456608.7314083097,
+                "ra": 33.24521444579539,
+                "dec": -2.6341867743803307,
+                "offset_ra": 0.022937162934177042,
+                "offset_dec": 0.012491231452393947,
+                "mag_psf": 10.663569450378418,
+                "mag_psf_err": 0.0020964762661606073
+            }
+        ],
+        "observations_count": 2,
+        "ot_ing_obs": {
+            "count": 2,
+            "filename": "des_obs.csv",
+            "tp_start": "2022-01-27T17:15:55.123003+00:00",
+            "tp_finish": "2022-01-27T17:15:55.292043+00:00"
+        }
+    },
+    {
+        "id": 1086945,
+        "name": "Rhesus",
+        "number": "9142",
+        "base_dynclass": "Trojan",
+        "dynclass": "Trojan",
+        "status": "running",
+        "ccds": [
+            {
+                "id": 1267026573,
+                "date_obs": "2013-10-29 03:46:32.731567+00:00",
+                "exptime": 90.0,
+                "path": "/archive/des/public/finalcut/Y5A1/r3651/20131028/D00247966/p01/cat",
+                "filename": "D00247966_g_c36_r3651p01_red-fullcat.fits",
+                "date_jd": 2456594.6578502096,
+                "date_et": 436290505.44059163,
+                "geocentric_positions": [
+                    489432375.5842031,
+                    342493952.0694367,
+                    -21834463.063063942
+                ],
+                "topocentric_positions": [
+                    489427316.5004149,
+                    342491751.88650256,
+                    -21831268.51461392
+                ],
+                "theoretical_coordinates": [
+                    34.98358346155365,
+                    -2.0930123077368012
+                ],
+                "observed_coordinates": [
+                    34.98357514283793,
+                    -2.0930159344044923
+                ],
+                "observed_omc": [
+                    -0.029927397365647722,
+                    -0.013056003687772488
+                ],
+                "magpsf": 11.391514778137207,
+                "magerrpsf": 0.0024566147476434708
+            },
+            {
+                "id": 1312122031,
+                "date_obs": "2013-11-12 05:32:28.154242+00:00",
+                "exptime": 90.0,
+                "path": "/archive/des/public/finalcut/Y5A1/r3651/20131111/D00253195/p02/cat",
+                "filename": "D00253195_z_c26_r3651p02_red-fullcat.fits",
+                "date_jd": 2456608.7314083097,
+                "date_et": 437506460.8606427,
+                "geocentric_positions": [
+                    506983888.563265,
+                    332335940.3788751,
+                    -27892901.38504686
+                ],
+                "topocentric_positions": [
+                    506981458.66811585,
+                    332330985.1557027,
+                    -27889710.51582424
+                ],
+                "theoretical_coordinates": [
+                    33.24520806762157,
+                    -2.634190244166845
+                ],
+                "observed_coordinates": [
+                    33.24521444579539,
+                    -2.6341867743803307
+                ],
+                "observed_omc": [
+                    0.022937162934177042,
+                    0.012491231452393947
+                ],
+                "magpsf": 10.663569450378418,
+                "magerrpsf": 0.0020964762661606073
+            }
+        ],
+        "path": "/lustre/t1/tmp/tno/asteroids/Rhesus",
+        "bsp_path": "/lustre/t1/tmp/tno/asteroids/Rhesus/Rhesus.bsp",
+        "spkid": "2009142",
+        "ot_theo_pos": {
+            "tp_start": "2022-01-27T17:12:46.445766+00:00",
+            "tp_finish": "2022-01-27T17:13:03.705347+00:00"
+        },
+        "observations": [
+            {
+                "name": "Rhesus",
+                "asteroid_id": 1086945,
+                "ccd_id": 1267026573,
+                "date_obs": "2013-10-29 03:46:32.731567+00:00",
+                "date_jd": 2456594.6578502096,
+                "ra": 34.98357514283793,
+                "dec": -2.0930159344044923,
+                "offset_ra": -0.029927397365647722,
+                "offset_dec": -0.013056003687772488,
+                "mag_psf": 11.391514778137207,
+                "mag_psf_err": 0.0024566147476434708
+            },
+            {
+                "name": "Rhesus",
+                "asteroid_id": 1086945,
+                "ccd_id": 1312122031,
+                "date_obs": "2013-11-12 05:32:28.154242+00:00",
+                "date_jd": 2456608.7314083097,
+                "ra": 33.24521444579539,
+                "dec": -2.6341867743803307,
+                "offset_ra": 0.022937162934177042,
+                "offset_dec": 0.012491231452393947,
+                "mag_psf": 10.663569450378418,
+                "mag_psf_err": 0.0020964762661606073
+            }
+        ],
+        "observations_count": 2,
+        "ot_ing_obs": {
+            "count": 2,
+            "filename": "des_obs.csv",
+            "tp_start": "2022-01-27T17:15:55.292081+00:00",
+            "tp_finish": "2022-01-27T17:15:55.483724+00:00"
+        }
+    }
+]
