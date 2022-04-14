@@ -29,29 +29,15 @@ from parsl_config import htex_config
 config = configparser.ConfigParser()
 config.read("config.ini")
 
-
 parser = argparse.ArgumentParser()
-parser.add_argument("jobid", help="Job ID")
 parser.add_argument("path", help="Job Path")
 args = parser.parse_args()
-
-# Job ID
-jobid = int(args.jobid)
 
 # Paths de execução
 original_path = os.getcwd()
 os.environ["EXECUTION_PATH"] = original_path
 
 current_path = args.path
-
-# Start Running Time
-t0 = datetime.now(tz=timezone.utc)
-
-# Create a Log file
-log = get_logger(current_path, "orbit_trace.log")
-log.info("--------------< DES Object Identifier >--------------")
-log.info("Job ID: [%s]" % jobid)
-log.info("Current Path: [%s]" % current_path)
 
 # Altera o path de execução
 # A raiz agora é o path passado como parametro.
@@ -60,8 +46,20 @@ os.chdir(current_path)
 # Read Inputs from job.json
 job = read_inputs(current_path, "job.json")
 
-# TODO: Ler uma variavel de DEBUG a partir do job.json
-# Essa variavel deve controlar o nivel de log e permitir que quando o debug esteja ativado os arquivos intermediarios de log não sejam apagados.
+# Job ID
+jobid = int(job.get("id"))
+
+
+DEBUG = job.get("debug", False)
+
+# Start Running Time
+t0 = datetime.now(tz=timezone.utc)
+
+# Create a Log file
+log = get_logger(current_path, "orbit_trace.log", DEBUG)
+log.info("--------------< DES Object Identifier >--------------")
+log.info("Job ID: [%s]" % jobid)
+log.info("Current Path: [%s]" % current_path)
 
 job.update(
     {
@@ -90,17 +88,19 @@ try:
     LEAP_SECOND = job["leap_seconds"]["absolute_path"]
     log.info("LEAP_SECOND: [%s]" % LEAP_SECOND)
 
-    DES_START_PERIOD = job["period"][0]
+    des_period = job.get("period", ["2012-11-01", "2019-02-01"])
+    DES_START_PERIOD = des_period[0]
     log.info("DES_START_PERIOD: [%s]" % DES_START_PERIOD)
-
-    DES_FINISH_PERIOD = job["period"][1]
+    DES_FINISH_PERIOD = des_period[1]
     log.info("DES_FINISH_PERIOD: [%s]" % DES_FINISH_PERIOD)
 
     # Location of observatory: [longitude, latitude, elevation]
-    OBSERVATORY_LOCATION = job["observatory_location"]
+    OBSERVATORY_LOCATION = job.get(
+        "observatory_location", [289.193583333, -30.16958333, 2202.7]
+    )
     log.info("OBSERVATORY_LOCATION: %s" % OBSERVATORY_LOCATION)
 
-    MATCH_RADIUS = job["match_radius"]
+    MATCH_RADIUS = job.get("match_radius", 2)
     log.info("MATCH_RADIUS: [%s]" % MATCH_RADIUS)
 
     BSP_DAYS_TO_EXPIRE = job.get("bsp_days_to_expire", 60)
@@ -330,8 +330,6 @@ try:
     # Update Job File
     write_job_file(current_path, job)
 
-    # raise Exception("Parou aqui!")
-
     # =========================== Parsl ===========================
     log.info("Parsl Load started")
 
@@ -525,7 +523,7 @@ try:
     count_observations = 0
     obs_pos_ast_failed = 0
     for asteroid in asteroids:
-        alias = asteroid_name.replace(" ", "_")
+        alias = asteroid["name"].replace(" ", "_")
         asteroid.update(
             {
                 "ccds": results[alias]["ccds"],
@@ -558,11 +556,10 @@ try:
     for asteroid in asteroids:
         if asteroid["status"] != "failure":
             success_asteroids.append(asteroid)
-
-            # TODO: Adicionar uma variavel DEBUG, quando ela estiver True os logs não são apagados.
-            # TODO: Remover os logs do diretório em caso de sucesso.
-            # for p in pathlib.Path(asteroid["path"]).glob("des_obs*.log"):
-            #     p.unlink()
+            if not DEBUG:
+                # Remover os logs do diretório em caso de sucesso.
+                for p in pathlib.Path(asteroid["path"]).glob("des_obs*.log"):
+                    p.unlink()
 
     asteroids = success_asteroids
 
@@ -613,9 +610,9 @@ try:
     ingested_ast_failed = 0
     success_asteroids = list()
     for asteroid in asteroids:
-        alias = asteroid_name.replace(" ", "_")
 
-        # TODO: ERRO DO NOME PROVAVELMENTE ESTA AQUI ou ANTES DESSA ETAPA.
+        alias = asteroid["name"].replace(" ", "_")
+
         observations = results[alias]["observations"]
 
         if len(observations) > 0:

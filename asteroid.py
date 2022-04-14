@@ -314,7 +314,8 @@ class Asteroid:
                             bsp_jpl = self.bsp_jpl
                             bsp_jpl["downloaded_in_this_run"] = False
                             log.info(
-                                "Pre-existing BSP is still valid and will be reused."
+                                "Asteroid [%s] Pre-existing BSP is still valid and will be reused."
+                                % self.name
                             )
 
             if bsp_jpl is None:
@@ -1110,23 +1111,23 @@ class Asteroid:
     def get_spkid(self):
         log = self.get_log()
 
-        if self.spkid is None or self.spkid is "":
+        if self.spkid is None or self.spkid == "":
             bsp_path = self.get_bsp_path()
 
             if self.bsp_jpl is not None and bsp_path.exists():
-                log.info("Search the SPKID from bsp file.")
+                log.debug("Search the SPKID from bsp file.")
 
                 try:
                     spkid = findSPKID(str(bsp_path))
 
-                    if spkid is None or spkid is "":
+                    if spkid is None or spkid == "":
                         self.spkid = None
                         log.warning(
                             "Asteroid [%s] Could not identify the SPKID." % self.name
                         )
                     else:
                         self.spkid = spkid
-                        log.info("Asteroid [%s] SPKID [%s]." % (self.name, self.spkid))
+                        log.debug("Asteroid [%s] SPKID [%s]." % (self.name, self.spkid))
 
                 except Exception as e:
                     self.spkid = None

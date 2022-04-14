@@ -7,7 +7,7 @@
 # iers.IERS.iers_table = iers.IERS_A.open(finalFile)
 
 
-def get_logger(path, filename="refine.log"):
+def get_logger(path, filename="refine.log", debug=False):
     import logging
     import os
 
@@ -16,7 +16,11 @@ def get_logger(path, filename="refine.log"):
     file_handler = logging.FileHandler(logfile)
     file_handler.setFormatter(formatter)
     log = logging.getLogger(filename.split(".log")[0])
-    log.setLevel(logging.DEBUG)
+    if debug:
+        log.setLevel(logging.DEBUG)
+    else:
+        log.setLevel(logging.INFO)
+
     log.addHandler(file_handler)
 
     return log
@@ -423,7 +427,7 @@ def compute_theoretical_positions(
 ):
 
     log.info("Compute Theoretical Positions")
-    log.info("SPKID: %s" % spkid)
+    log.debug("SPKID: %s" % spkid)
 
     # try:
     #     log.info("Download finals2000A.all")
@@ -504,7 +508,7 @@ def compute_theoretical_positions(
         results.append(ccd)
 
     spice.kclear()
-    
+
     log.info("Theoretical Positions Completed")
 
     return results
