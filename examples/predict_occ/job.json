@@ -1,0 +1,13 @@
+{
+    "id": 1,
+    "status": "Submited",
+    "submit_time": "2021-05-26T10:00:00",
+    "path": "/lustre/t1/tmp/tno/predict_occultation/1_Eris",
+    "filter_type": "name",
+    "filter_value": "Eris",
+    "predict_start_date": "2022-01-01",
+    "predict_end_date": "2022-12-31",
+    "predict_step": 600,
+    "force_refresh_inputs": false,
+    "inputs_days_to_expire": 0
+}

@@ -8,6 +8,7 @@ import os
 import pathlib
 import time
 import traceback
+import csv
 from datetime import datetime, timezone
 
 import humanize
@@ -60,6 +61,7 @@ log = get_logger(current_path, "orbit_trace.log", DEBUG)
 log.info("--------------< DES Object Identifier >--------------")
 log.info("Job ID: [%s]" % jobid)
 log.info("Current Path: [%s]" % current_path)
+log.info("DEBUG: [%s]" % DEBUG)
 
 job.update(
     {
@@ -69,6 +71,7 @@ job.update(
         "exec_time": 0,
         "count_success": 0,
         "count_failures": 0,
+        "time_profile": [],
     }
 )
 
@@ -156,6 +159,7 @@ try:
     i = 0
     success_asteroids = list()
     ccd_ast_failed = 0
+    all_ccds = list()
     for asteroid in asteroids:
 
         if asteroid["status"] != "failure":
@@ -172,6 +176,7 @@ try:
 
             ccds = a.retrieve_ccds(LEAP_SECOND)
             count_ccds += len(ccds)
+            all_ccds += ccds
 
             if len(ccds) == 0:
                 asteroid.update(
@@ -232,6 +237,18 @@ try:
 
     # Update Job File
     write_job_file(current_path, job)
+
+    # Escreve um csv com todos os ccds utilizados no job
+    ccds_csv_filename = pathlib.Path(current_path, "ccds.csv")
+    with open(ccds_csv_filename, "w") as csvfile:
+        fieldnames = ["id", "date_obs", "exptime", "path", "filename"]
+        writer = csv.DictWriter(
+            csvfile, fieldnames=fieldnames, delimiter=";", extrasaction="ignore"
+        )
+
+        writer.writeheader()
+        writer.writerows(all_ccds)
+
 
     # =========================== BSP ===========================
     # Retrieve BSPs
@@ -763,8 +780,8 @@ finally:
         % (job["count_success"], job["count_failures"])
     )
 
-    log.info("Identification of DES object is done!.")
     log.info("Execution Time: %s" % tdelta)
+    log.info("Identification of DES object is done!.")
 
 # Como Utilízar:
 # cd /archive/des/tno/dev/nima/pipeline

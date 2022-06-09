@@ -74,16 +74,16 @@ class Asteroid:
 
     def __init__(self, id, name, number=None, base_dynclass=None, dynclass=None):
 
-        self.id = id
         self.name = name
-
-        if number is not None and number != "-" and number != "":
-            self.number = str(number)
-
         self.alias = name.replace(" ", "").replace("_", "")
 
-        self.base_dynclass = base_dynclass
-        self.dynclass = dynclass
+        # self.id = id
+
+        # if number is not None and number != "-" and number != "":
+        #     self.number = str(number)
+
+        # self.base_dynclass = base_dynclass
+        # self.dynclass = dynclass
 
         # Cria ou recupera o path do asteroid
         self.path = self.get_or_create_dir()
@@ -91,6 +91,20 @@ class Asteroid:
         # Verifica se existe arquivo json para o objeto se existir carrega o conteudo na classe
         json_data = self.read_asteroid_json()
         self.__dict__.update(json_data)
+
+        # TODO: O Correto é que a leitura do json seja feita por ultimo. 
+        # Mas no momento existe jsons com valores antigos e invalidos 
+        # para corrigir isto vou sobrescrever alguns campos apos a leitura do json.
+        # Os campos que vem por parametro vem do banco de dados que é sempre atualizado.
+        self.id = id
+        if number is not None and number != "-" and number != "":
+            self.number = str(number)
+        
+        if base_dynclass is not None:
+            self.base_dynclass = base_dynclass
+            
+        if dynclass is not None:
+            self.dynclass = dynclass
 
     def __getitem__(self, item):
         return self.__dict__[item]
@@ -108,7 +122,7 @@ class Asteroid:
 
     def get_log(self):
         if self.__log is None:
-            self.__log = logging.getLogger("refine")
+            self.__log = logging.getLogger(self.__logname)
 
         return self.__log
 
@@ -1078,12 +1092,18 @@ class Asteroid:
             ccds = dao.ccds_by_asteroid(self.name)
 
             for ccd in ccds:
+                # Correção no path dos ccds, para ficar igual ao ambiente do linea
+                path = ccd["path"].replace('OPS/', '')
+                path = path.replace('/red/immask', '/cat')
+                filename = ccd["filename"].replace('immasked.fits', 'red-fullcat.fits')                
                 ccd.update(
                     {
                         "date_obs": str(ccd["date_obs"]),
                         "date_jd": date_to_jd(
                             ccd["date_obs"], ccd["exptime"], leap_second
                         ),
+                        "path": path,
+                        "filename": filename
                     }
                 )
 
