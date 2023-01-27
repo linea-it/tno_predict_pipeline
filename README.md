@@ -4,14 +4,15 @@ Criar um enviroment usando o condor o nome do enviroment deve ser tno_pipeline
 
 ```bash
 # Enviroment com python 3.8
-conda create -n tno_pipeline python=3.8
-# Ativa o enviroment
-conda activate tno_pipeline
-# Instala as dependencias utilizando as versões mais recentes.
-conda install -y numpy astropy spiceypy scipy astroquery humanize pandas paramiko parsl psycopg2-binary sqlalchemy python-dateutil python-htcondor requests 
+conda env create -f environment.yml
 
-# OU usando versões pre-fixadas
-# TODO: Adicionar o comando.
+Ou instalando as libs individualmente.
+
+#conda create -n tno_pipeline python=3.8
+# Ativa o enviroment
+# conda activate tno_pipeline
+# Instala as dependencias utilizando as versões mais recentes.
+# conda install -y numpy astropy spiceypy scipy astroquery humanize pandas paramiko parsl psycopg2-binary sqlalchemy python-dateutil python-htcondor requests 
 ```
 
 Depois de instalada as dependencias é necessário fazer uma configuração no Astropy
@@ -38,8 +39,8 @@ PIPELINE_ROOT = Deve apontar para o diretório onde estão os scripts do pipelin
 
 O arquivo env.sh fica assim: 
 ```bash
-export CONDAPATH=/home/glauber.costa/miniconda3/bin
-export PIPELINE_ROOT=/archive/des/tno/dev/pipelines
+export CONDAPATH=/lustre/t1/tmp/tno/miniconda3/bin
+export PIPELINE_ROOT=/lustre/t1/tmp/tno/miniconda3/bin
 export PYTHONPATH=$PYTHONPATH:$PIPELINE_ROOT
 
 source $CONDAPATH/activate
@@ -47,8 +48,8 @@ conda activate tno_pipeline
 
 umask 0002
 ```
-Considerando que o meu conda está instalado no Home do meu usuario.
-e os scripts estão no /archive 
+Considerando que o meu conda está instalado no /lustre/t1/tmp/tno/miniconda3.
+e os scripts estão no /lustre/t1/tmp/tno/pipelines 
 ambos os diretórios precisam estar acessiveis pelo HTCondor. 
 
 Configuração do PARSL
@@ -72,7 +73,7 @@ htex_config = Config(
                 max_blocks=896,
                 parallelism=1,
                 scheduler_options='+AppType = "TNO"\n+AppName = "Orbit Trace"\n',
-                worker_init="source /archive/des/tno/dev/pipelines/env.sh",
+                worker_init="source /lustre/t1/tmp/tno/pipelines/env.sh",
                 cmd_timeout=120,
             ),
         ),
@@ -97,8 +98,8 @@ TODO: Texto explicando como o pipeline funciona
 - Ter acesso ao cluster HTcondor
 - Ter os arquivos leap seconds e bsp planetary acessiveis pelo cluster.
 - O usuário que for executar o pipeline precisa ser do grupo `des-brazil`
-- Ter acesso ao banco de dados do portal tno neste momento só está disponivel a instancia de testing executando na srvnode03:5454.
-- Ter acesso ao diretório onde estão os catalogos do DES no momento estão aqui: `/archive/des/public`
+- Ter acesso ao banco de dados do portal tno neste momento só está disponivel a instancia de testing executando na srvnode04.linea.gov.br:5455.
+- Ter acesso ao diretório onde estão os catalogos do DES no momento estão aqui: `/archive/cl/ton/`
 
 
 ### Como executar o pipeline manualmente.
@@ -190,7 +191,7 @@ Estando o job.json criado no diretório é hora de executar o job.
 primeiro vamos carregar o enviroment. estando na pasta onde o pipeline está instalado no momento o path é : `/archive/des/tno/dev/pipelines/` repare que o path onde o pipeline está é diferente do path dos inputs e outputs. antes de executar confirme que está utilizando um usuario que pertença ao grupo `des-brazil`.
 
 ```bash
-cd /archive/des/tno/dev/pipelines/
+cd /lustre/t1/tmp/tno/pipelines/
 ```
 No diretório existe um shell script chamado env.sh responsavel por carregar o enviroment e exportar os paths. 
 ```bash
