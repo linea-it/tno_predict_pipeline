@@ -120,7 +120,7 @@ try:
 
     asteroids = retrieve_asteroids(job["filter_type"], job["filter_value"])
 
-    # asteroids = asteroids[0:5]
+    #asteroids = asteroids[0:20]
 
     job.update({"count_asteroids": len(asteroids)})
 

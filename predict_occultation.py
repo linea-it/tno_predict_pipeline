@@ -109,6 +109,8 @@ try:
     PREDICT_STEP = int(job.get("predict_step", 600))
     log.info("Predict Step: [%s]" % PREDICT_STEP)
 
+    # TODO: Utilizar os parametros de BSP_PLanetary e LEAP Second do job.json.
+
     # CONDOR_JOB_TIME_LIMIT: Tempo Limite de execução de um job no HTCondor em Minutos.
     # Todo Job submetido e que estiver com JobStatus = 2 ou seja Running
     # será verificado o tempo de execução contando a partir do JobStartDate caso o tempo de execução seja maior
@@ -136,6 +138,8 @@ try:
     step_t0 = datetime.now(tz=timezone.utc)
 
     asteroids = retrieve_asteroids(job["filter_type"], job["filter_value"])
+
+    #asteroids = asteroids[0:20]
 
     step_t1 = datetime.now(tz=timezone.utc)
     step_tdelta = step_t1 - step_t0
@@ -454,9 +458,10 @@ try:
         l_consolidated.append(a.consiladate())
 
         #  Remove todos os arquivos gerados durante o processo, deixa apenas os inputs
-        a.remove_outputs()
+        if not DEBUG:
+            a.remove_outputs()
 
-        del a
+            del a
 
         current_idx += 1
 
@@ -565,17 +570,27 @@ finally:
 # python predict_occultation.py /lustre/t1/tmp/tno/predict_occultation/<job_folder>
 
 # Exemplo de job.json
-# {
-#     "id": 1,
-#     "status": "Submited",
-#     "submit_time": "2021-05-26T10:00:00",
-#     "path": "/lustre/t1/tmp/tno/predict_occultation/1_Eris",
-#     "filter_type": "name",
-#     "filter_value": "Eris",
-#     "predict_start_date": "2022-01-01",
-#     "predict_end_date": "2022-12-31",
-#     "predict_step": 600,
-#     "force_refresh_inputs": false,
-#     "inputs_days_to_expire": 0
-# }
-
+#{
+#	"id": 6,
+#	"status": "Submited",
+#	"submit_time": "2023-03-24T10:20:00",
+#	"path": "/lustre/t1/tmp/tno/predict_occultation/6_Eris",
+#	"filter_type": "name",
+#	"filter_value": "Eris",
+#	"predict_start_date": "2023-01-01",
+#	"predict_end_date": "2023-12-31",
+#	"predict_step": 600,
+#	"force_refresh_inputs": true,
+#	"inputs_days_to_expire": 0,
+#	"debug": true,
+#	"bsp_planetary": {
+#		"name": "de440",
+#		"filename": "de440.bsp",
+#		"absolute_path": "/lustre/t1/tmp/tno/bsp_planetary/de440.bsp"
+#	},
+#	"leap_seconds": {
+#		"name": "naif0012",
+#		"filename": "naif0012.tls",
+#		"absolute_path": "/lustre/t1/tmp/tno/leap_seconds/naif0012.tls"
+#	}
+#}
