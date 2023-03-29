@@ -1,5 +1,6 @@
-export CONDAPATH=/home/glauber.costa/miniconda3/bin
-export PIPELINE_ROOT=/archive/des/tno/dev/pipelines
+#!/bin/bash
+export CONDAPATH=/lustre/t1/tmp/tno/miniconda3/bin
+export PIPELINE_ROOT=/lustre/t1/tmp/tno/pipelines
 export PYTHONPATH=$PYTHONPATH:$PIPELINE_ROOT
 
 source $CONDAPATH/activate

@@ -23,18 +23,11 @@ htex_config = Config(
                 max_blocks=800,
                 parallelism=1,
                 scheduler_options='+AppType = "TNO"\n+AppName = "Orbit Trace"\n',
-                worker_init="source /archive/des/tno/dev/pipelines/env.sh",
+                # worker_init="source /archive/cl/ton/dev/pipelines/env.sh",
+                worker_init="pwd && source /lustre/t1/tmp/tno/pipelines/env.sh",
                 cmd_timeout=120,
             ),
         ),
     ],
-    # monitoring=MonitoringHub(
-    #     hub_address=address_by_hostname(),
-    #     hub_port=55055,
-    #     monitoring_debug=True,
-    #     logging_endpoint=f"sqlite:////archive/tmp/singulani/tno/tno.db",
-    #     resource_monitoring_interval=10,
-    # ),
     strategy=None,
-    #     run_dir='/archive/tmp/singulani/tno/'
 )

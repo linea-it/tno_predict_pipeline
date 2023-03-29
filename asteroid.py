@@ -1092,15 +1092,17 @@ class Asteroid:
             ccds = dao.ccds_by_asteroid(self.name)
 
             for ccd in ccds:
+                
                 # Correção no path dos ccds, para ficar igual ao ambiente do linea
                 path = ccd["path"].replace('OPS/', '')
                 path = path.replace('/red/immask', '/cat')
                 filename = ccd["filename"].replace('immasked.fits', 'red-fullcat.fits')                
+                #print(str(ccd["date_obs"].astimezone(timezone.utc)))
                 ccd.update(
                     {
-                        "date_obs": str(ccd["date_obs"]),
+                        "date_obs": str(ccd["date_obs"].astimezone(timezone.utc)),
                         "date_jd": date_to_jd(
-                            ccd["date_obs"], ccd["exptime"], leap_second
+                            str(ccd["date_obs"].astimezone(timezone.utc)).strip(), ccd["exptime"], leap_second
                         ),
                         "path": path,
                         "filename": filename
