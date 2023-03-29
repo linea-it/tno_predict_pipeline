@@ -6,4 +6,6 @@ export PYTHONPATH=$PYTHONPATH:$PIPELINE_ROOT
 source $CONDAPATH/activate
 conda activate tno_pipeline
 
+zsh
+
 umask 0002
