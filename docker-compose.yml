@@ -9,7 +9,57 @@ services:
     command: uvicorn main:app --host 0.0.0.0 --reload
     volumes:
       - ./tno:/usr/src/app
-    # environment:
-    #   - CELERY_BROKER_URL=redis://redis:6379/0
-    #   - CELERY_RESULT_BACKEND=redis://redis:6379/0
-    # depends_on:
+    environment:
+      - CELERY_BROKER_URL=amqp://tnorabbit:tno123tno@rabbit:5672/tno
+      - CELERY_RESULT_BACKEND=rpc://tnorabbit:tno123tno@rabbit:5672/tno
+    depends_on:
+      - rabbit
+
+  celery_worker:
+    build: ./tno
+    command: celery -A worker worker -l INFO
+    volumes:
+      - ./tno:/usr/src/app
+    environment:
+      - CELERY_BROKER_URL=amqp://tnorabbit:tno123tno@rabbit:5672/tno
+      - CELERY_RESULT_BACKEND=rpc://tnorabbit:tno123tno@rabbit:5672/tno
+    depends_on:
+      - backend
+      - rabbit
+
+  celery_beat:
+    build: ./tno
+    command: celery -A worker beat -l INFO
+    volumes:
+      - ./tno:/usr/src/app
+    environment:
+      - CELERY_BROKER_URL=amqp://tnorabbit:tno123tno@rabbit:5672/tno
+      - CELERY_RESULT_BACKEND=rpc://tnorabbit:tno123tno@rabbit:5672/tno
+    depends_on:
+      - backend
+      - rabbit
+
+  celery_flower:
+    build: ./tno
+    #command:  flower --app=worker --port=5555 --broker=amqp://tnorabbit:tno123tno@rabbit:5672/tno
+    command: sleep infinity
+    ports:
+      - 5556:5555
+    environment:
+      - CELERY_BROKER_URL=amqp://tnorabbit:tno123tno@rabbit:5672/tno
+      - CELERY_RESULT_BACKEND=rpc://tnorabbit:tno123tno@rabbit:5672/tno
+    depends_on:
+      - backend
+      - rabbit
+      - celery_worker
+      - celery_beat
+
+  # Message-Broker Software RabbitMQ
+  rabbit:
+    image: rabbitmq:3-management-alpine
+    environment:
+      - RABBITMQ_DEFAULT_USER=tnorabbit
+      - RABBITMQ_DEFAULT_PASS=tno123tno
+      - RABBITMQ_DEFAULT_VHOST=tno
+    ports:
+      - 8005:15672
