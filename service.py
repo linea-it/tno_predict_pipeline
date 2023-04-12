@@ -145,16 +145,22 @@ def orbit_trace_job_queue():
     # orbit_trace_run_job(job_to_run.get("id"))
     # # TODO: Remover Hardcoded.
     # orbit_trace_run_job(3)
+    return job_to_run.get("id")
 
-# orbit_trace_job_queue()
+orbit_trace_job_queue()
 
 # path = '/home/mehdi/PycharmProjects'
 # import sys
 # sys.path.append(path)
 
-from celery_app.tasks import add
-result = add.delay(4, 4)
-result.ready()
-a = result.get(timeout=1)
+# from tno_celery.tasks import add
+# result = add.delay(4, 4)
+# # result.ready()
+# print(result.ready())
+# a = result.get(timeout=1)
 
-print(a)
+# print(a)
+
+# Como iniciar o Celery
+# celery -A tno_celery worker -l INFO
+# celery -A tno_celery beat -l INFO

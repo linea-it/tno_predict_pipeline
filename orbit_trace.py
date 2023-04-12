@@ -188,7 +188,7 @@ def main(path):
 
         # Paths de execução
         original_path = os.getcwd()
-        os.environ["EXECUTION_PATH"] = original_path
+        # os.environ["EXECUTION_PATH"] = original_path
 
         current_path = path
 
