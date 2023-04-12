@@ -41,8 +41,7 @@ services:
 
   celery_flower:
     build: ./tno
-    #command:  flower --app=worker --port=5555 --broker=amqp://tnorabbit:tno123tno@rabbit:5672/tno
-    command: sleep infinity
+    command: celery -A worker flower 
     ports:
       - 5556:5555
     environment:

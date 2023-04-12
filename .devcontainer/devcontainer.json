@@ -7,10 +7,29 @@
 	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
 	"features": {
 		"ghcr.io/devcontainers/features/common-utils:2": {
-			"configureZshAsDefaultShell": true
+			"installZsh": true,
+			"configureZshAsDefaultShell": true,
+			"installOhMyZsh": true,
+			"upgradePackages": true,
+			"username": "vscode",
+			"userUid": "automatic",
+			"userGid": "automatic"
 		},
-		"ghcr.io/devcontainers-contrib/features/zsh-plugins:0": {},
-		"ghcr.io/stuartleeks/dev-container-features/shell-history:0": {}
+		"ghcr.io/devcontainers-contrib/features/zsh-plugins:0": {
+			"plugins": "ssh-agent npm",
+			"omzPlugins": "https://github.com/zsh-users/zsh-autosuggestions",
+			"username": "vscode"
+		},
+		"ghcr.io/stuartleeks/dev-container-features/shell-history:0": {},
+		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+			"installDockerBuildx": true,
+			"version": "latest",
+			"dockerDashComposeVersion": "v2"
+		},
+		"ghcr.io/devcontainers-contrib/features/black:2": {
+			"version": "latest"
+		},
+		"ghcr.io/devcontainers-contrib/features/isort:2": {}
 	},
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
@@ -27,13 +46,32 @@
 	"customizations": {
 		"vscode": {
 			"extensions": [
+				"ms-python.python",
+				"ms-python.vscode-pylance",
 				"eamodio.gitlens",
 				"ms-azuretools.vscode-docker",
-				"ms-python.isort"
-			]
+				"ms-python.pylint"
+			],
+			"settings": {
+				"terminal.integrated.defaultProfile.linux": "zsh",				
+				// "python.languageServer": "Pylance",
+				// "python.linting.enabled": true,
+				// "python.linting.pylintEnabled": true,
+				// "python.formatting.autopep8Path": "/usr/local/py-utils/bin/autopep8",
+				// "python.formatting.blackPath": "/usr/local/py-utils/bin/black",
+				// "python.formatting.yapfPath": "/usr/local/py-utils/bin/yapf",
+				// "python.linting.banditPath": "/usr/local/py-utils/bin/bandit",
+				// "python.linting.flake8Path": "/usr/local/py-utils/bin/flake8",
+				// "python.linting.mypyPath": "/usr/local/py-utils/bin/mypy",
+				// "python.linting.pycodestylePath": "/usr/local/py-utils/bin/pycodestyle",
+				// "python.linting.pydocstylePath": "/usr/local/py-utils/bin/pydocstyle",
+				// "python.linting.pylintPath": "/usr/local/py-utils/bin/pylint",
+				// "python.testing.pytestPath": "/usr/local/py-utils/bin/pytest"
+			}
+			
 		}
-	}
-
+	},
+	
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-	// "remoteUser": "root"
+	"remoteUser": "vscode"
 }
