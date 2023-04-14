@@ -17,14 +17,14 @@ app.conf.update(
 )
 
 app.conf.beat_schedule = {
-    'add-every-30-seconds': {
-        'task': 'tno_celery.tasks.add',
-        'schedule': 10.0,
-        'args': (2, 2)
-    },
+    # 'add-every-30-seconds': {
+    #     'task': 'tno_celery.tasks.add',
+    #     'schedule': 10.0,
+    #     'args': (2, 2)
+    # },
     'add-every-30-seconds': {
         'task': 'tno_celery.tasks.orbit_trace_queue',
-        'schedule': 10.0,
+        'schedule': 30.0,
         # 'args': (16, 16)
     },    
     #  "schedule": crontab(minute="*/1"),

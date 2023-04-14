@@ -1,5 +1,5 @@
 from tno_celery.celery import app
-from service import orbit_trace_job_queue
+from orbit_trace import orbit_trace_job_queue, orbit_trace_run_job
 
 @app.task
 def add(x, y):
@@ -17,3 +17,8 @@ def xsum(numbers):
 @app.task
 def orbit_trace_queue():
     orbit_trace_job_queue()
+
+@app.task
+def orbit_trace_run(a, b):
+    orbit_trace_run_job(a, b)
+    

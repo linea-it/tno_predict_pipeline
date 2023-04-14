@@ -336,8 +336,12 @@ class OrbitTraceJobDao(Dao):
             count_observations=job.get('count_observations', 0),
             count_success=job.get('count_success', 0),
             count_failures=job.get('count_failures', 0),
-            # h_exec_time=job.get('h_exec_time', None),
-            h_exec_time=0,            
+            h_exec_time=job.get('h_exec_time', None),
+            condor_job_submited=job.get('condor_job_submited', 0),
+            condor_job_completed=job.get('condor_job_completed', 0),
+            condor_job_removed=job.get('condor_job_removed', 0),
+            # avg_exec_time_asteroid=job.get('avg_exec_time_asteroid', 0),
+            # avg_exec_time_ccd=job.get('avg_exec_time_ccd', 0) 
         )
 
         engine = self.get_db_engine()
@@ -351,13 +355,11 @@ class OrbitTraceJobDao(Dao):
         job = self.get_job_by_id(job_id)
 
         stm = update(self.tbl).where(and_(self.tbl.c.id == int(job['id']))).values(
-            # path=None,
             path="",
             submit_time=datetime.now(tz=timezone.utc),
             status=1,
             start=None,
             end=None,
-            # exec_time=None,
             exec_time=timedelta(seconds=0),
             error=None,
             traceback=None,
@@ -366,9 +368,7 @@ class OrbitTraceJobDao(Dao):
             count_observations=0,
             count_success=0,
             count_failures=0,
-            # h_exec_time=None,
             h_exec_time=0,
-
         )
 
         engine = self.get_db_engine()
@@ -385,8 +385,7 @@ class OrbitTraceJobResultDao(Dao):
     def import_orbit_trace_results(self, data):
 
         # Sql Copy com todas as colunas que vão ser importadas e o formato do csv.
-        # sql = "COPY %s (job_id, asteroid_id, name, number, base_dynclass, dynclass, status, spk_id, observations, ccds) FROM STDIN with (FORMAT CSV, DELIMITER '|', HEADER);" % self.tbl
-        sql = "COPY %s (asteroid_name, asteroid_number, base_dynclass, dynclass, status, spk_id, observations, ccds, error, asteroid_id, job_id) FROM STDIN with (FORMAT CSV, DELIMITER '|', HEADER);" % self.tbl
+        sql = "COPY %s (name, number, base_dynclass, dynclass, status, spk_id, observations, ccds, error, asteroid_id, job_id) FROM STDIN with (FORMAT CSV, DELIMITER '|', HEADER);" % self.tbl
 
         rowcount = self.import_with_copy_expert(sql, data)
 
@@ -407,3 +406,74 @@ class OrbitTraceJobResultDao(Dao):
         stm = select(self.tbl.c).where(and_(self.tbl.c.id == id))
 
         return self.fetch_one_dict(stm)        
+    
+
+class PredictOccultationJobDao(Dao):
+    def __init__(self):
+        super(PredictOccultationJobDao, self).__init__()
+
+        self.tbl = self.get_table('tno_predictionjob')
+
+    def get_job_by_status(self, status:int):
+        # (1, "Idle"),
+        # (2, "Running"),
+        # (3, "Completed"),
+        # (4, "Failed"),
+        # (5, "Aborted"),
+        # (6, "Warning"),
+        # (7, "Aborting"),
+        stm = (
+            select(self.tbl.c)
+            .where(and_(self.tbl.c.status == status))
+            .order_by(self.tbl.c.submit_time)
+            .limit(1)
+        )
+        return self.fetch_one_dict(stm)
+
+    def get_job_by_id(self, id:int) -> dict:
+
+        stm = select(self.tbl.c).where(and_(self.tbl.c.id == id))
+
+        return self.fetch_one_dict(stm)
+
+    def get_status_id_from_string(self, status):
+        labels = [
+            "Idle",
+            "Running",
+            "Completed",
+            "Failed",
+            "Aborted",
+            "Warning",
+            "Aborting"
+        ]
+        return labels.index(status)+1
+
+    def update_job(self, job):
+
+        if isinstance(job['status'], str):
+            job['status'] = self.get_status_id_from_string(job['status'])
+
+        stm = update(self.tbl).where(and_(self.tbl.c.id == int(job['id']))).values(
+            path=job['path'],
+            status=job['status'],
+            start=job['start'],
+            end=job['end'],
+            exec_time=datetime.timedelta(seconds=job['exec_time']),
+            error=job['error'],
+            traceback=job['traceback'],
+            count_asteroids=job.get('count_asteroids', 0),
+            count_ccds=job.get('count_ccds',0),
+            count_observations=job.get('count_observations', 0),
+            count_success=job.get('count_success', 0),
+            count_failures=job.get('count_failures', 0),
+            h_exec_time=job.get('h_exec_time', None),
+            condor_job_submited=job.get('condor_job_submited', 0),
+            condor_job_completed=job.get('condor_job_completed', 0),
+            condor_job_removed=job.get('condor_job_removed', 0),
+            # avg_exec_time_asteroid=job.get('avg_exec_time_asteroid', 0),
+            # avg_exec_time_ccd=job.get('avg_exec_time_ccd', 0) 
+        )
+
+        engine = self.get_db_engine()
+        with engine.connect() as con:
+            return con.execute(stm)    

@@ -19,13 +19,13 @@ DES_CATALOG_PATH = "/lustre/t1/tmp/tno/temp_catalogs"
 
 # DES_CATALOG_PATH = "/archive/des/public"
 BASE_DES_URL = "https://desar2.cosmology.illinois.edu/DESFiles/desarchive/OPS/"
-DOWNLOAD_MISSING_FILES = False
+DOWNLOAD_MISSING_FILES = True
 
 #asteroids = retrieve_asteroids("name", "Eris")
 #centaurs = retrieve_asteroids("base_dynclass", "Centaur")
 kbos = retrieve_asteroids("base_dynclass", "KBO")
 # asteroids = centaurs + kbos
-asteroids = kbos
+asteroids = kbos[0:300]
 print("Asteroids: %s" % len(asteroids))
 
 ccds_to_download = list()
@@ -101,4 +101,3 @@ with open(ccds_csv_filename, "w") as csvfile:
 
     writer.writeheader()
     writer.writerows(ccds_to_download)
-

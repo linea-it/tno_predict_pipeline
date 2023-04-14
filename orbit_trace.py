@@ -20,6 +20,7 @@ from library import (
     write_job_file,
     ingest_observations,
     write_json,
+    get_configs
 )
 from orbit_trace_apps import observed_positions, theoretical_positions
 from parsl_config import htex_config
@@ -27,6 +28,9 @@ from dao import OrbitTraceJobDao, OrbitTraceJobResultDao
 import pandas as pd
 from io import StringIO
 from pathlib import Path
+import shutil
+import subprocess
+import uuid
 
 def update_job(job) -> None:
     otjdao = OrbitTraceJobDao()
@@ -38,10 +42,8 @@ def orbit_trace_job_to_run():
     """Retorna o job com status=1 Idle mas antigo.
 
     Returns:
-        _type_: _description_
+        job: Orbit Trace Job model
     """
-    # from dao import OrbitTraceJobDao
-
     otjdao = OrbitTraceJobDao()
     job = otjdao.get_job_by_status(1)
 
@@ -54,8 +56,6 @@ def orbit_trace_has_job_running() -> bool:
     Returns:
         bool: True caso haja algum job sendo executado.
     """
-    # from dao import OrbitTraceJobDao
-
     otjdao = OrbitTraceJobDao()
     job = otjdao.get_job_by_status(2)
 
@@ -63,6 +63,22 @@ def orbit_trace_has_job_running() -> bool:
         return True
     else:
         return False
+
+def orbit_trace_job_queue():
+
+    # Verifica se ha algum job sendo executado.
+    if orbit_trace_has_job_running():
+        # print("Já existe um job em execução.")
+        return
+
+    # Verifica o proximo job com status Idle
+    job_to_run = orbit_trace_job_to_run()
+    if not job_to_run:
+        return
+
+    # Inicia o job.
+    # print("Deveria executar o job com ID: %s" % job_to_run.get("id")) 
+    orbit_trace_run_job(job_to_run.get("id"))
 
 
 def orbit_trace_make_job_json_file(job, path):
@@ -100,6 +116,57 @@ def orbit_trace_make_job_json_file(job, path):
 
     write_job_file(path, job_data)
 
+def orbit_trace_run_job(jobid: int):
+
+    otjdao = OrbitTraceJobDao()    
+
+    # TODO: ONLY DEVELOPMENT
+    # otjdao.development_reset_job(jobid)
+
+    job = otjdao.get_job_by_id(jobid)
+
+    config = get_configs()
+    orbit_trace_root = config["DEFAULT"].get("OrbitTraceJobPath")
+
+    # Cria um diretório para o job
+    # TODO: ONLY DEVELOPMENT
+    # folder_name = f"teste_{job['id']}"
+    folder_name = f"teste_{job['id']}-{str(uuid.uuid4())[:8]}"    
+    job_path = Path(orbit_trace_root).joinpath(folder_name)
+    if job_path.exists():
+        shutil.rmtree(job_path)
+    job_path.mkdir(parents=True, exist_ok=False)
+
+    # Escreve o arquivo job.json
+    orbit_trace_make_job_json_file(job, job_path)
+
+    # Executa o job usando subproccess.
+    env_file = Path(os.environ['EXECUTION_PATH']).joinpath('env.sh')
+    proc = subprocess.Popen(
+        # f"source /lustre/t1/tmp/tno/pipelines/env.sh; python orbit_trace.py {job_path}",
+        f"source {env_file}; python orbit_trace.py {job_path}",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        shell=True,
+        text=True
+    )
+
+    # import time
+    # while proc.poll() is None:
+    #     print("Shell command is still running...")
+    #     time.sleep(1)
+
+    # # When arriving here, the shell command has finished.
+    # # Check the exit code of the shell command:
+    # print(proc.poll())
+    # # 0, means the shell command finshed successfully.
+
+    # # Check the output and error of the shell command:
+    # output, error = proc.communicate()
+    # print(output)
+    # print(error)
+
+
 def ingest_job_results(job_path, job_id):
 
     file_names = ['asteroids_failed.json', 'asteroids_success.json']
@@ -115,24 +182,13 @@ def ingest_job_results(job_path, job_id):
                 if fname == 'asteroids_success.json':
                     status = 1
              
-                # TODO: A ser removido
-                number = asteroid.get('number', None)
-                if  number is None:
-                    number = 'DEVERIA SER NULL'
-                spkid = asteroid.get('spkid', None)
-                if spkid is None:
-                    spkid = "DEVERIA SER NULL"
-
                 row = dict({
-                    # 'name': asteroid['name'],
-                    # 'number': asteroid['number'],           
-                    'asteroid_name': asteroid['name'],
-                    # 'asteroid_number': asteroid.get('number', None),
-                    'asteroid_number': number,
+                    'name': asteroid['name'],
+                    'number': asteroid.get('number', None),           
                     'base_dynclass': asteroid['base_dynclass'],
                     'dynclass': asteroid['dynclass'],       
                     'status': status,
-                    'spk_id': spkid,
+                    'spk_id': asteroid.get('spkid', None),
                     'observations': asteroid.get('observations_count', 0),
                     'ccds': len(asteroid.get('ccds', [])),           
                     'error': asteroid.get('error', None),
@@ -144,16 +200,12 @@ def ingest_job_results(job_path, job_id):
     df_results = pd.DataFrame(
         data,
         columns=[
-                # "name",
-                # "number",
-                "asteroid_name",
-                "asteroid_number",                
+                "name",
+                "number",
                 "base_dynclass",
                 "dynclass",
                 "status",
                 "spk_id",
-                # "observations",
-                # "ccds",
                 "observations",
                 "ccds",                
                 "error",
@@ -176,15 +228,13 @@ def ingest_job_results(job_path, job_id):
     otjrdao.delete_by_job_id(job_id)
     rowcount = otjrdao.import_orbit_trace_results(str_data)
 
+    return rowcount
+
 def main(path):
     try:
         # Carrega as variaveis de configuração do arquivo config.ini
         config = configparser.ConfigParser()
         config.read("config.ini")
-
-        # parser = argparse.ArgumentParser()
-        # parser.add_argument("path", help="Job Path")
-        # args = parser.parse_args()
 
         # Paths de execução
         original_path = os.getcwd()
@@ -201,7 +251,6 @@ def main(path):
 
         # Job ID
         jobid = int(job.get("id"))
-
 
         DEBUG = job.get("debug", False)
 
@@ -301,6 +350,9 @@ def main(path):
         # Update Job File
         # write_job_file(current_path, job)
         update_job(job)
+
+        if job["count_asteroids"] == 0:
+            raise ("No asteroid satisfying the criteria %s and %s. There is nothing to run." % (job["filter_type"], job["filter_value"]))
 
         # =========================== CCDs ===========================
         # Retrieve CCDs
@@ -643,6 +695,9 @@ def main(path):
         step_t0 = datetime.now(tz=timezone.utc)
 
         futures = list()
+        htcondor_job_submited = 0
+        htcondor_jobs_completed = 0
+        htcondor_jobs_removed = 0
         for asteroid in asteroids:
             idx = 0
             for ccd in asteroid["ccds"]:
@@ -661,6 +716,7 @@ def main(path):
                         )
                     )
                     idx += 1
+                    htcondor_job_submited += 1
                     log.debug(
                         "Submited: Asteroid [%s] CCD: [%s] IDX:[%s]"
                         % (asteroid["name"], ccd["id"], idx)
@@ -691,6 +747,16 @@ def main(path):
             results[alias]["ccds"].append(ccd)
             if obs_coordinates is not None:
                 results[alias]["observations"].append(obs_coordinates)
+
+            htcondor_jobs_completed += 1
+
+        # TODO: Implementar remoção de jobs por time out.
+        job.update({
+            'condor_job_submited': htcondor_job_submited,
+            'condor_job_completed': htcondor_jobs_completed,
+            'condor_job_removed': htcondor_jobs_removed
+        })
+        update_job(job)
 
         # Agrupar os resultados.
         count_observations = 0
@@ -880,7 +946,8 @@ def main(path):
         write_json(success_json, asteroids)
 
         log.info("Ingest Orbit Trace Job Results in database")
-        ingest_job_results(current_path, jobid)
+        count_results_ingested = ingest_job_results(current_path, jobid)
+        log.debug("Orbit Trace Job Results ingested: %s" % count_results_ingested)
 
         step_t1 = datetime.now(tz=timezone.utc)
         step_tdelta = step_t1 - step_t0
@@ -922,11 +989,23 @@ def main(path):
         t1 = datetime.now(tz=timezone.utc)
         tdelta = t1 - t0
 
+        # Calc average time by asteroid
+        avg_exec_time_asteroid = 0
+        if (job.get('count_asteroids') > 0):
+            avg_exec_time_asteroid = int(tdelta.total_seconds() / job.get('count_asteroids'))
+        
+        # Calc average time by CCDs
+        avg_exec_time_ccd = 0
+        if (job.get('count_ccds') > 0):
+            avg_exec_time_ccd = int(tdelta.total_seconds() / job.get('count_ccds'))
+
         job.update(
             {
                 "end": t1.isoformat(),
                 "exec_time": tdelta.total_seconds(),
                 "h_exec_time": humanize.naturaldelta(tdelta),
+                "avg_exec_time_asteroid": avg_exec_time_asteroid,
+                "avg_exec_time_ccd": avg_exec_time_ccd
             }
         )
 
@@ -951,56 +1030,8 @@ def main(path):
 # python orbit_trace.py 1 /archive/des/tno/dev/nima/pipeline/examples/orbit_trace_job
 
 if __name__ == '__main__':
-    print("Entrou aqui!")
     parser = argparse.ArgumentParser()
     parser.add_argument("path", help="Job Path")
     args = parser.parse_args()
-    print("Path: %s" % args.path)
 
     sys.exit(main(args.path))
-
-# 1999 LE31
-# 2001 BL41
-# 2001 XZ255
-
-
-# 2022-01-26 17:26:07,654 [WARNING] Asteroid [2001 BL41] Failed on retrive asteroids BSP from JPL.
-# ================================================================================
-
-# Toolkit version: CSPICE66
-
-# SPICE(SPKINSUFFDATA) --
-
-# Insufficient ephemeris data has been loaded to compute the position of 2049036 relative to 0 (SOLAR SYSTEM BARYCENTER) at the ephemeris epoch 2013 FEB 11 09:06:01.735.
-
-# spkpos_c --> SPKPOS --> SPKEZP --> SPKAPO --> SPKGPS
-
-# ================================================================================
-
-
-# [WARNING] Asteroid [1999 LE31] Failed on retrive asteroids BSP from JPL.
-# ================================================================================
-
-# Toolkit version: CSPICE66
-
-# SPICE(EMPTYSTRING) --
-
-# String "targ" has length zero.
-
-# spkpos_c
-
-# ================================================================================
-
-
-# [WARNING] Asteroid [2001 XZ255] Failed on retrive asteroids BSP from JPL.
-# ================================================================================
-
-# Toolkit version: CSPICE66
-
-# SPICE(EMPTYSTRING) --
-
-# String "targ" has length zero.
-
-# spkpos_c
-
-# ================================================================================
