@@ -271,7 +271,7 @@ class OccultationDao(Dao):
     def import_occultations(self, data):
 
         # Sql Copy com todas as colunas que vão ser importadas e o formato do csv.
-        sql = "COPY %s (name, number, date_time, ra_star_candidate, dec_star_candidate, ra_target, dec_target, closest_approach, position_angle, velocity, delta, g, j, h, k, long, loc_t, off_ra, off_dec, proper_motion, ct, multiplicity_flag, e_ra, e_dec, pmra, pmdec, ra_star_deg, dec_star_deg, ra_target_deg, dec_target_deg, asteroid_id ) FROM STDIN with (FORMAT CSV, DELIMITER '|', HEADER);" % self.tbl
+        sql = "COPY %s (name, number, date_time, ra_star_candidate, dec_star_candidate, ra_target, dec_target, closest_approach, position_angle, velocity, delta, g, j, h, k, long, loc_t, off_ra, off_dec, proper_motion, ct, multiplicity_flag, e_ra, e_dec, pmra, pmdec, ra_star_deg, dec_star_deg, ra_target_deg, dec_target_deg, asteroid_id, created_at ) FROM STDIN with (FORMAT CSV, DELIMITER '|', HEADER);" % self.tbl
 
         rowcount = self.import_with_copy_expert(sql, data)
 
@@ -337,11 +337,11 @@ class OrbitTraceJobDao(Dao):
             count_success=job.get('count_success', 0),
             count_failures=job.get('count_failures', 0),
             h_exec_time=job.get('h_exec_time', None),
-            condor_job_submited=job.get('condor_job_submited', 0),
-            condor_job_completed=job.get('condor_job_completed', 0),
-            condor_job_removed=job.get('condor_job_removed', 0),
-            # avg_exec_time_asteroid=job.get('avg_exec_time_asteroid', 0),
-            # avg_exec_time_ccd=job.get('avg_exec_time_ccd', 0) 
+            # condor_job_submited=job.get('condor_job_submited', 0),
+            # condor_job_completed=job.get('condor_job_completed', 0),
+            # condor_job_removed=job.get('condor_job_removed', 0),
+            avg_exec_time_asteroid=job.get('avg_exec_time_asteroid', 0),
+            avg_exec_time_ccd=job.get('avg_exec_time_ccd', 0) 
         )
 
         engine = self.get_db_engine()
@@ -454,26 +454,49 @@ class PredictOccultationJobDao(Dao):
             job['status'] = self.get_status_id_from_string(job['status'])
 
         stm = update(self.tbl).where(and_(self.tbl.c.id == int(job['id']))).values(
-            path=job['path'],
             status=job['status'],
+            path=job['path'],
             start=job['start'],
             end=job['end'],
             exec_time=datetime.timedelta(seconds=job['exec_time']),
-            error=job['error'],
-            traceback=job['traceback'],
+            # h_exec_time=job.get('h_exec_time', None),
+            avg_exec_time=job.get('avg_exec_time', 0),
             count_asteroids=job.get('count_asteroids', 0),
-            count_ccds=job.get('count_ccds',0),
-            count_observations=job.get('count_observations', 0),
+            count_asteroids_with_occ=job.get('ast_with_occ', 0),
+            count_occ=job.get('occultations', 0),
             count_success=job.get('count_success', 0),
             count_failures=job.get('count_failures', 0),
-            h_exec_time=job.get('h_exec_time', None),
-            condor_job_submited=job.get('condor_job_submited', 0),
-            condor_job_completed=job.get('condor_job_completed', 0),
-            condor_job_removed=job.get('condor_job_removed', 0),
-            # avg_exec_time_asteroid=job.get('avg_exec_time_asteroid', 0),
-            # avg_exec_time_ccd=job.get('avg_exec_time_ccd', 0) 
+            error=job['error'],
+            traceback=job['traceback'],            
         )
 
         engine = self.get_db_engine()
         with engine.connect() as con:
             return con.execute(stm)    
+        
+
+class PredictOccultationJobResultDao(Dao):
+    def __init__(self):
+        super(PredictOccultationJobResultDao, self).__init__()
+
+        self.tbl = self.get_table('tno_predictionjobresult')
+
+
+    def import_predict_occultation_results(self, data):
+
+        # Sql Copy com todas as colunas que vão ser importadas e o formato do csv.
+        sql = "COPY %s (name, number, base_dynclass, dynclass, status, des_obs, obs_source, orb_ele_source, occultations, ing_occ_count, exec_time, messages, asteroid_id, job_id, des_obs_start, des_obs_finish, des_obs_exec_time, bsp_jpl_start, bsp_jpl_finish, bsp_jpl_dw_time, obs_start, obs_finish, obs_dw_time, orb_ele_start, orb_ele_finish, orb_ele_dw_time, ref_orb_start, ref_orb_finish, ref_orb_exec_time, pre_occ_start, pre_occ_finish, pre_occ_exec_time, ing_occ_start, ing_occ_finish, ing_occ_exec_time) FROM STDIN with (FORMAT CSV, DELIMITER '|', HEADER);" % self.tbl
+
+        rowcount = self.import_with_copy_expert(sql, data)
+
+        return rowcount
+
+    def delete_by_job_id(self, job_id):
+
+        stm = delete(self.tbl).where(and_(self.tbl.c.job_id == job_id))
+
+        engine = self.get_db_engine()
+        with engine.connect() as con:
+            rows = con.execute(stm)
+
+            return rows

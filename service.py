@@ -89,8 +89,6 @@ def make_job_json_file(job, path):
         "predict_start_date": job.get("predict_start_date").isoformat(),
         "predict_end_date": job.get("predict_end_date").isoformat(),
         "predict_step": job.get("predict_step", 600),        
-        "force_refresh_inputs": job.get('force_refresh_inputs', False),
-        "inputs_days_to_expire": job.get('inputs_days_to_expire', 5),
         "debug": bool(job.get('debug', False)),
         "error": None,
         "traceback": None,
@@ -110,6 +108,8 @@ def make_job_json_file(job, path):
             "filename": "naif0012.tls",
             "absolute_path": "/lustre/t1/tmp/tno/leap_seconds/naif0012.tls",
         },           
+        # "force_refresh_inputs": False,
+        # "inputs_days_to_expire": 5,        
     })
 
     write_job_file(path, job_data)
@@ -168,9 +168,13 @@ def run_job(jobid: int):
 
 # job_queue()
 
-run_job(4)
 # TODO: Já escreve o arquivo job json 
 # - Falta alterar o pipeline predict para executar com chamada de função.
 # - Falta alterar o metodo de update do job.
-from predict_occultation import main
-main("/lustre/t1/tmp/tno/predict_occultation/teste_4")
+
+from predict_occultation import main, ingest_job_results
+job_id = 15
+job_path = f"/lustre/t1/tmp/tno/predict_occultation/teste_{job_id}"
+run_job(job_id)
+main(job_path)
+# ingest_job_results(job_path, job_id)

@@ -18,6 +18,8 @@ import pandas as pd
 import random
 from asteroid import Asteroid
 import sys
+from dao import PredictOccultationJobDao, PredictOccultationJobResultDao
+from io import StringIO
 
 from library import (
     get_logger,
@@ -26,6 +28,85 @@ from library import (
     retrieve_asteroids,
     submit_job,
 )
+
+def update_job(job) -> None:
+    dao = PredictOccultationJobDao()
+    dao.update_job(job)
+
+    write_job_file(job.get('path'), job)
+
+def ingest_job_results(job_path, job_id):
+    dao = PredictOccultationJobResultDao()
+    dao.delete_by_job_id(job_id)
+
+    filepath = pathlib.Path(job_path, "job_consolidated.csv")
+
+    df = pd.read_csv(
+        filepath, 
+        delimiter=";",
+        usecols=[
+        "ast_id", "name", "number", "base_dynclass", "dynclass", 
+        "des_obs", "obs_source", "orb_ele_source", "pre_occ_count", "ing_occ_count",
+        "messages", "exec_time", "status", 
+        "des_obs_start", "des_obs_finish", "des_obs_exec_time",
+        "bsp_jpl_start", "bsp_jpl_finish", "bsp_jpl_dw_time",
+        "obs_start", "obs_finish", "obs_dw_time",
+        "orb_ele_start", "orb_ele_finish", "orb_ele_dw_time",
+        "ref_orb_start", "ref_orb_finish", "ref_orb_exec_time",
+        "pre_occ_start", "pre_occ_finish", "pre_occ_exec_time",
+        "ing_occ_start", "ing_occ_finish", "ing_occ_exec_time"
+        ]
+        )
+    df['job_id'] = int(job_id)
+    df = df.rename(
+        columns={
+            "ast_id": "asteroid_id",
+            "pre_occ_count": "occultations"
+        })
+    
+    df["des_obs"].fillna(0, inplace=True)
+    df["occultations"].fillna(0, inplace=True)
+    df["ing_occ_count"].fillna(0, inplace=True)
+
+    # TODO: Remover
+    df["status"].fillna(1, inplace=True)
+
+    df = df.astype({
+        "des_obs": 'int32',
+        "occultations": 'int32',
+        "ing_occ_count": 'int32',
+        "asteroid_id": 'int32',
+        "job_id": 'int32',
+        "status": 'int32',
+        })
+    
+    df = df.reindex(
+        columns=[
+        "name", "number", "base_dynclass", "dynclass", 
+        "status", "des_obs", "obs_source", "orb_ele_source", 
+        "occultations", "ing_occ_count", "exec_time", "messages", 
+        "asteroid_id", "job_id",
+        "des_obs_start", "des_obs_finish", "des_obs_exec_time",
+        "bsp_jpl_start", "bsp_jpl_finish", "bsp_jpl_dw_time",
+        "obs_start", "obs_finish", "obs_dw_time",
+        "orb_ele_start", "orb_ele_finish", "orb_ele_dw_time",
+        "ref_orb_start", "ref_orb_finish", "ref_orb_exec_time",
+        "pre_occ_start", "pre_occ_finish", "pre_occ_exec_time",
+        "ing_occ_start", "ing_occ_finish", "ing_occ_exec_time"
+        ])
+                
+    print(df.head())
+
+    data = StringIO()
+    df.to_csv(
+        data, sep="|", header=True, index=False,
+    )
+    data.seek(0)
+
+    rowcount = dao.import_predict_occultation_results(data)
+
+    print(rowcount)
+    return rowcount
 
 def main(path):
     try:
@@ -56,7 +137,7 @@ def main(path):
 
         # Create a Log file
         logname = "predict_occ"
-        log = get_logger(current_path, "%s.log" % logname, DEBUG)
+        log = get_logger(current_path, f"{logname}.log", DEBUG)
 
         log.info("--------------< Predict Occultation Pipeline >--------------")
         log.info("Job ID: [%s]" % jobid)
@@ -69,6 +150,7 @@ def main(path):
                 "start": t0.isoformat(),
                 "end": None,
                 "exec_time": 0,
+                "count_asteroids": 0,
                 "count_success": 0,
                 "count_failures": 0,
                 "time_profile": [],
@@ -76,7 +158,8 @@ def main(path):
         )
 
         log.info("Update Job status to running.")
-        write_job_file(current_path, job)
+        # write_job_file(current_path, job)
+        update_job(job)
 
     # try:
     #     # log.debug("Job Inputs: %s" % json.dumps(job))
@@ -124,11 +207,15 @@ def main(path):
         log.info("Condor Job time Limit: [%s]" % CONDOR_JOB_TIME_LIMIT)
 
         # Remove resultados e inputs de execuções anteriores
-        FORCE_REFRESH_INPUTS = bool(job.get("force_refresh_inputs", False))
+        # Durante o desenvolvimento é util não remover os inputs pois acelera o processamento
+        # No uso normal é recomendado sempre regerar os inputs
+        FORCE_REFRESH_INPUTS = bool(job.get("force_refresh_inputs", True))
         log.info("Force Refresh Inputs: [%s]" % FORCE_REFRESH_INPUTS)
 
         # Determina a validade dos arquivos de inputs.
-        inputs_days_to_expire = int(job.get("inputs_days_to_expire", 5))
+        # Durante o desenvolvimento é util não fazer o download a cada execução
+        # No uso normal é recomendado sempre baixar os inputs utilizando valor 0 
+        inputs_days_to_expire = int(job.get("inputs_days_to_expire", 0))
         BSP_DAYS_TO_EXPIRE = inputs_days_to_expire
         ORBITAL_ELEMENTS_DAYS_TO_EXPIRE = inputs_days_to_expire
         OBSERVATIONS_DAYS_TO_EXPIRE = inputs_days_to_expire
@@ -143,7 +230,7 @@ def main(path):
 
         asteroids = retrieve_asteroids(job["filter_type"], job["filter_value"])
 
-        #asteroids = asteroids[0:20]
+        # asteroids = asteroids[0:5]
 
         step_t1 = datetime.now(tz=timezone.utc)
         step_tdelta = step_t1 - step_t0
@@ -158,7 +245,7 @@ def main(path):
         )
 
         # Update Job File
-        write_job_file(current_path, job)
+        update_job(job)
 
         if job["count_asteroids"] == 0:
             raise ("No asteroid satisfying the criteria %s and %s. There is nothing to run." % (job["filter_type"], job["filter_value"]))
@@ -313,7 +400,7 @@ def main(path):
         while len(finished_jobs) < total_jobs:
 
             # Sleep Necessário
-            time.sleep(180)
+            time.sleep(30)
 
             for htc_job in htc_jobs:
 
@@ -439,6 +526,8 @@ def main(path):
         # Total de asteroids com algum evendo de ocultação no periodo.
         total_ast_occ = 0
 
+        l_status = list()
+
         current_idx = 1
         for asteroid in asteroids:
 
@@ -454,13 +543,15 @@ def main(path):
                 # TODO: Coletar o tempo da execução da ingestão
                 rowcount = a.register_occultations(PREDICT_START.date(), PREDICT_END.date())
 
+                log.info("Asteroid: [%s] Occultations: [%s]" % (asteroid["name"], rowcount))
+
                 total_occultations += rowcount
                 total_ast_occ += 1
 
-                log.info("Asteroid: [%s] Occultations: [%s]" % (asteroid["name"], rowcount))
-
             # Aproveita o Loop em todos os asteroids para gerar um resumo consolidado de todos os asteroids envolvidos no Job
             l_consolidated.append(a.consiladate())
+
+            l_status.append(a.status)
 
             #  Remove todos os arquivos gerados durante o processo, deixa apenas os inputs
             if not DEBUG:
@@ -474,6 +565,8 @@ def main(path):
             "Asteroids with Occultations: [%s] Occultations: [%s]"
             % (total_ast_occ, total_occultations)
         )
+        count_success = l_status.count(1)
+        count_failures = l_status.count(2)
 
         # ========================= Consolidando resultados ============================
         log.info("Consolidating Job Results.")
@@ -483,7 +576,9 @@ def main(path):
             columns=[
                 "ast_id",
                 "name",
+                "number",
                 "base_dynclass",
+                "dynclass",
                 "des_obs",
                 "des_obs_start",
                 "des_obs_finish",
@@ -524,21 +619,28 @@ def main(path):
                 "ing_occ_exec_time",
                 "exec_time",
                 "messages",
+                "status"
             ],
         )
 
         result_filepath = pathlib.Path(current_path, "job_consolidated.csv")
         df_result.to_csv(result_filepath, encoding="utf-8", sep=";", index=False)
         del df_result
-
         log.info("File with the consolidated Job data. [%s]" % result_filepath)
 
+        log.info("Ingest Predict Occultation Job Results in database")
+        count_results_ingested = ingest_job_results(current_path, jobid)
+        log.debug("Predict Occultation Job Results ingested: %s" % count_results_ingested)
+
+      
         # Status 3 = Completed
         job.update(
             {
                 "status": "Completed",
                 "ast_with_occ": total_ast_occ,
                 "occultations": total_occultations,
+                "count_success": count_success,
+                "count_failures": count_failures,
                 "condor_job_submited": total_jobs,
                 "condor_job_completed": condor_job_completed,
                 "condor_job_removed": condor_job_removed,
@@ -568,14 +670,20 @@ def main(path):
             "end": t1.isoformat(), 
             "exec_time": tdelta.total_seconds(),
             "h_exec_time": humanize.naturaldelta(tdelta),
-            "avg_exec_time_asteroid": avg_exec_time_asteroid,
+            "avg_exec_time": avg_exec_time_asteroid,
         })
 
         log.info("Update Job status.")
-        write_job_file(current_path, job)
+        # write_job_file(current_path, job)
+        update_job(job)
 
         # Altera o path de execução para o path original
         os.chdir(original_path)
+
+        log.info(
+            "Asteroids Success: [%s] Failure: [%s] Total: [%s]"
+            % (job["count_success"], job["count_failures"], job["count_asteroids"])
+        )
 
         log.info("Execution Time: %s" % tdelta)
         log.info("Predict Occultation is done!.")
