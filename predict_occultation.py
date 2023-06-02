@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import argparse
@@ -20,6 +19,10 @@ from asteroid import Asteroid
 import sys
 from dao import PredictOccultationJobDao, PredictOccultationJobResultDao
 from io import StringIO
+from library import get_configs
+import shutil
+import subprocess
+import uuid
 
 from library import (
     get_logger,
@@ -28,6 +31,141 @@ from library import (
     retrieve_asteroids,
     submit_job,
 )
+
+def job_to_run():
+    """Retorna o job com status=1 Idle mas antigo.
+
+    Returns:
+        job: Orbit Trace Job model
+    """
+    dao = PredictOccultationJobDao()
+    job = dao.get_job_by_status(1)
+
+    return job
+
+def has_job_running() -> bool:
+    """Verifica se há algum job com status = 2 Running.
+
+    Returns:
+        bool: True caso haja algum job sendo executado.
+    """
+    dao = PredictOccultationJobDao()
+    job = dao.get_job_by_status(2)
+
+    if job is not None:
+        return True
+    else:
+        return False
+
+def make_job_json_file(job, path):
+
+    job_data = dict({
+        "id": job.get('id'),
+        "status": "Submited",
+        "submit_time": job.get('submit_time').astimezone(timezone.utc).isoformat(),
+        "estimated_execution_time": str(job.get('estimated_execution_time')),
+        "path": str(path),
+        "filter_type": job.get('filter_type'),
+        "filter_value": job.get('filter_value'),
+        "predict_start_date": job.get("predict_start_date").isoformat(),
+        "predict_end_date": job.get("predict_end_date").isoformat(),
+        "predict_step": job.get("predict_step", 600),        
+        "debug": bool(job.get('debug', False)),
+        "error": None,
+        "traceback": None,
+        # Parsl init block não está sendo utilizado no pipeline
+        # "parsl_init_block": int(job.get('parsl_init_block', 600)),
+        # TODO: Adicionar parametro para catalog 
+        # "catalog_id": job.get('catalog_id')
+        # TODO: Estes parametros devem ser gerados pelo pipeline lendo do config.
+        # TODO: Bsp e leap second deve fazer a query e verificar o arquivo ou fazer o download.
+        "bsp_planetary": {
+            "name": "de440",
+            "filename": "de440.bsp",
+            "absolute_path": "/lustre/t1/tmp/tno/bsp_planetary/de440.bsp",
+        },
+        "leap_seconds": {
+            "name": "naif0012",
+            "filename": "naif0012.tls",
+            "absolute_path": "/lustre/t1/tmp/tno/leap_seconds/naif0012.tls",
+        },           
+        # "force_refresh_inputs": False,
+        # "inputs_days_to_expire": 5,        
+    })
+
+    write_job_file(path, job_data)
+
+def run_job(jobid: int):
+
+    dao = PredictOccultationJobDao()
+
+    # TODO: ONLY DEVELOPMENT
+    # dao.development_reset_job(jobid)
+
+    job = dao.get_job_by_id(jobid)
+
+    config = get_configs()
+    orbit_trace_root = config["DEFAULT"].get("PredictOccultationJobPath")
+
+    # Cria um diretório para o job
+    # TODO: ONLY DEVELOPMENT
+    # folder_name = f"teste_{job['id']}"
+    # folder_name = f"predict_{job['id']}-{str(uuid.uuid4())[:8]}"    
+    folder_name = f"{job['id']}-{str(uuid.uuid4())[:8]}"    
+    job_path = pathlib.Path(orbit_trace_root).joinpath(folder_name)
+    if job_path.exists():
+        shutil.rmtree(job_path)
+    job_path.mkdir(parents=True, exist_ok=False)
+
+    # Escreve o arquivo job.json
+    make_job_json_file(job, job_path)
+
+    return main(job_path)
+
+    # # Executa o job usando subproccess.
+    # env_file = pathlib.Path(os.environ['EXECUTION_PATH']).joinpath('env.sh')
+    # proc = subprocess.Popen(
+    #     # f"source /lustre/t1/tmp/tno/pipelines/env.sh; python orbit_trace.py {job_path}",
+    #     f"source {env_file}; python predict_occultation.py {job_path}",
+    #     stdout=subprocess.PIPE,
+    #     stderr=subprocess.PIPE,
+    #     shell=True,
+    #     text=True
+    # )
+    
+    # [DESENVOLVIMENTO] descomentar este bloco para que o função execute. 
+    # import time
+    # while proc.poll() is None:
+    #     print("Shell command is still running...")
+    #     time.sleep(1)
+
+    # # When arriving here, the shell command has finished.
+    # # Check the exit code of the shell command:
+    # print(proc.poll())
+    # # 0, means the shell command finshed successfully.
+
+    # # Check the output and error of the shell command:
+    # output, error = proc.communicate()
+    # print(output)
+    # print(error)
+
+
+def predict_job_queue():
+
+    # Verifica se ha algum job sendo executado.
+    if has_job_running():
+        # print("Já existe um job em execução.")
+        return
+
+    # Verifica o proximo job com status Idle
+    to_run = job_to_run()
+    if not to_run:
+        # print("Nenhum job para executar.")
+        return
+
+    # Inicia o job.
+    # print("Deveria executar o job com ID: %s" % to_run.get("id")) 
+    run_job(to_run.get("id"))
 
 def update_job(job) -> None:
     dao = PredictOccultationJobDao()
@@ -95,8 +233,6 @@ def ingest_job_results(job_path, job_id):
         "ing_occ_start", "ing_occ_finish", "ing_occ_exec_time"
         ])
                 
-    print(df.head())
-
     data = StringIO()
     df.to_csv(
         data, sep="|", header=True, index=False,
@@ -105,7 +241,6 @@ def ingest_job_results(job_path, job_id):
 
     rowcount = dao.import_predict_occultation_results(data)
 
-    print(rowcount)
     return rowcount
 
 def main(path):
@@ -118,8 +253,7 @@ def main(path):
         original_path = os.getcwd()
         # os.environ["EXECUTION_PATH"] = original_path
 
-        current_path = path
-
+        current_path = pathlib.Path(path)
         # Altera o path de execução
         # A raiz agora é o path passado como parametro.
         os.chdir(current_path)
@@ -170,7 +304,11 @@ def main(path):
         # aos Asteroids, dentro deste diretório serão criados diretorios para cada
         # Asteroid contendo seus arquivos de inputs e outputs.
         # Atenção: Precisar permitir uma quantidade grande de acessos de leitura e escrita simultaneas.
-        ASTEROID_PATH = config["DEFAULT"].get("AsteroidPath")
+        # ASTEROID_PATH = config["DEFAULT"].get("AsteroidPath")
+        # Alterado para que os asteroids fiquem na pasta do processo.
+        ASTEROID_PATH = current_path.joinpath("asteroids")
+        ASTEROID_PATH.mkdir(parents=True, exist_ok=False)
+
         log.info("Asteroid PATH: [%s]" % ASTEROID_PATH)
 
         # Parametros usados na Predição de Ocultação

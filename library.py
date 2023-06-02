@@ -548,7 +548,7 @@ def ingest_observations(path, observations):
                 "ccd_id",
             ],
         )
-
+        df_obs["created_at"] = datetime.now(tz=timezone.utc)
         # Guarda uma copia das observações no diretório do Asteroid.
         filepath = pathlib.Path(path, "des_obs.csv")
         df_obs.to_csv(filepath, sep=";", header=True, index=False)
@@ -564,7 +564,7 @@ def ingest_observations(path, observations):
 
         # Sql Copy com todas as colunas que vão ser importadas e o formato do csv.
         sql = (
-            "COPY %s (name, date_obs, date_jd, ra, dec, offset_ra, offset_dec, mag_psf, mag_psf_err, asteroid_id, ccd_id) FROM STDIN with (FORMAT CSV, DELIMITER '|', HEADER);"
+            "COPY %s (name, date_obs, date_jd, ra, dec, offset_ra, offset_dec, mag_psf, mag_psf_err, asteroid_id, ccd_id, created_at) FROM STDIN with (FORMAT CSV, DELIMITER '|', HEADER);"
             % tablename
         )
 
