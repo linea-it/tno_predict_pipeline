@@ -587,3 +587,15 @@ def ingest_observations(path, observations):
         result.update({"tp_start": tp0.isoformat(), "tp_finish": tp1.isoformat()})
 
         return result
+
+
+def get_configs():
+    import configparser
+    import os
+    # Carrega as variaveis de configuração do arquivo config.ini
+    execution_path = os.environ['EXECUTION_PATH']
+    config_filepath = os.path.join(execution_path, 'config.ini')
+    config = configparser.ConfigParser()
+    config.read(config_filepath)
+
+    return config

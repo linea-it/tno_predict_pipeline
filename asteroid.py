@@ -50,6 +50,12 @@ class Asteroid:
     __BSP_YEARS_BEHIND = 1
     __BSP_DAYS_TO_EXPIRE = 60
 
+    # Status 
+    # 0 = undefined
+    # 1 = Success
+    # 2 = Failure
+    status = 0
+
     id = None
     name = None
     number = None
@@ -71,6 +77,9 @@ class Asteroid:
     refine_orbit = None
     predict_occultation = None
     ingest_occultations = None
+
+    messages = list()
+    exec_time = None
 
     def __init__(self, id, name, number=None, base_dynclass=None, dynclass=None):
 
@@ -156,6 +165,12 @@ class Asteroid:
 
     def get_path(self):
         return self.path
+
+    def set_success(self):
+        self.status = 1
+
+    def set_failure(self):
+        self.status = 2
 
     def read_asteroid_json(self):
 
@@ -600,7 +615,7 @@ class Asteroid:
                 {
                     "filename": fpath.name,
                     "size": fpath.stat().st_size,
-                    "count": rows_count,
+                    "count": int(rows_count),
                     "start": t0.isoformat(),
                     "finish": t1.isoformat(),
                     "exec_time": tdelta.total_seconds(),
@@ -801,6 +816,8 @@ class Asteroid:
             df["ct"] = df["ct"].str.replace("--", "")
             df["f"] = df["f"].str.replace("-", "")
 
+            df["created_at"] = dt.now(tz=timezone.utc)
+
             # Altera o nome das colunas
             df = df.rename(
                 columns={
@@ -852,6 +869,7 @@ class Asteroid:
                     "ra_target_deg",
                     "dec_target_deg",
                     "asteroid_id",
+                    "created_at"
                 ]
             )
 
@@ -898,16 +916,16 @@ class Asteroid:
         log = self.get_log()
 
         a = dict(
-            {"ast_id": self.id, "name": self.name, "base_dynclass": self.base_dynclass,}
+            {"ast_id": self.id, "name": self.name, "number": self.number, "base_dynclass": self.base_dynclass, "dynclass": self.dynclass}
         )
 
         try:
-            messages = list()
             exec_time = 0
 
             if self.des_observations is not None:
                 if "message" in self.des_observations:
-                    messages.append(self.des_observations["message"])
+                    self.messages.append(self.des_observations["message"])
+                    # self.set_failure()
                 else:
                     a.update(
                         {
@@ -915,9 +933,7 @@ class Asteroid:
                             "des_obs_start": self.des_observations["start"],
                             "des_obs_finish": self.des_observations["finish"],
                             "des_obs_exec_time": self.des_observations["exec_time"],
-                            "des_obs_gen_run": self.des_observations[
-                                "generated_in_this_run"
-                            ],
+                            "des_obs_gen_run": self.des_observations.get("generated_in_this_run", False),
                             "des_obs_tp_start": self.des_observations["tp_start"],
                             "des_obs_tp_finish": self.des_observations["tp_finish"],
                         }
@@ -927,14 +943,15 @@ class Asteroid:
 
             if self.bsp_jpl is not None:
                 if "message" in self.bsp_jpl:
-                    messages.append(self.bsp_jpl["message"])
+                    self.messages.append(self.bsp_jpl["message"])
+                    self.set_failure()
                 else:
                     a.update(
                         {
                             "bsp_jpl_start": self.bsp_jpl["dw_start"],
                             "bsp_jpl_finish": self.bsp_jpl["dw_finish"],
                             "bsp_jpl_dw_time": self.bsp_jpl["dw_time"],
-                            "bsp_jpl_dw_run": self.bsp_jpl["downloaded_in_this_run"],
+                            "bsp_jpl_dw_run": self.bsp_jpl.get("downloaded_in_this_run", False),
                             "bsp_jpl_tp_start": self.bsp_jpl["tp_start"],
                             "bsp_jpl_tp_finish": self.bsp_jpl["tp_finish"],
                         }
@@ -944,7 +961,8 @@ class Asteroid:
 
             if self.observations is not None:
                 if "message" in self.observations:
-                    messages.append(self.observations["message"])
+                    self.messages.append(self.observations["message"])
+                    self.set_failure()
                 else:
                     a.update(
                         {
@@ -952,7 +970,7 @@ class Asteroid:
                             "obs_start": self.observations["dw_start"],
                             "obs_finish": self.observations["dw_finish"],
                             "obs_dw_time": self.observations["dw_time"],
-                            "obs_dw_run": self.observations["downloaded_in_this_run"],
+                            "obs_dw_run": self.observations.get("downloaded_in_this_run", False),
                             "obs_tp_start": self.observations["tp_start"],
                             "obs_tp_finish": self.observations["tp_finish"],
                         }
@@ -962,7 +980,8 @@ class Asteroid:
 
             if self.orbital_elements is not None:
                 if "message" in self.orbital_elements:
-                    messages.append(self.orbital_elements["message"])
+                    self.messages.append(self.orbital_elements["message"])
+                    self.set_failure()
                 else:
                     a.update(
                         {
@@ -970,9 +989,7 @@ class Asteroid:
                             "orb_ele_start": self.orbital_elements["dw_start"],
                             "orb_ele_finish": self.orbital_elements["dw_finish"],
                             "orb_ele_dw_time": self.orbital_elements["dw_time"],
-                            "orb_ele_dw_run": self.orbital_elements[
-                                "downloaded_in_this_run"
-                            ],
+                            "orb_ele_dw_run": self.orbital_elements.get("downloaded_in_this_run", False),
                             "orb_ele_tp_start": self.orbital_elements["tp_start"],
                             "orb_ele_tp_finish": self.orbital_elements["tp_finish"],
                         }
@@ -982,7 +999,7 @@ class Asteroid:
 
             if self.refine_orbit is not None:
                 if "message" in self.refine_orbit:
-                    messages.append(self.refine_orbit["message"])
+                    self.messages.append(self.refine_orbit["message"])
                 else:
                     a.update(
                         {
@@ -996,26 +1013,27 @@ class Asteroid:
 
             if self.predict_occultation is not None:
                 if "message" in self.predict_occultation:
-                    messages.append(self.predict_occultation["message"])
+                    self.messages.append(self.predict_occultation["message"])
+                    self.set_failure()
                 else:
                     a.update(
                         {
-                            "pre_occ_count": self.predict_occultation["count"],
+                            "pre_occ_count": int(self.predict_occultation["count"]),
                             "pre_occ_start": self.predict_occultation["start"],
                             "pre_occ_finish": self.predict_occultation["finish"],
                             "pre_occ_exec_time": self.predict_occultation["exec_time"],
                         }
                     )
-
                     exec_time += float(self.predict_occultation["exec_time"])
 
             if self.ingest_occultations is not None:
                 if "message" in self.ingest_occultations:
-                    messages.append(self.ingest_occultations["message"])
+                    self.messages.append(self.ingest_occultations["message"])
+                    self.set_failure()
                 else:
                     a.update(
                         {
-                            "ing_occ_count": self.ingest_occultations["count"],
+                            "ing_occ_count": int(self.ingest_occultations["count"]),
                             "ing_occ_start": self.ingest_occultations["start"],
                             "ing_occ_finish": self.ingest_occultations["finish"],
                             "ing_occ_exec_time": self.ingest_occultations["exec_time"],
@@ -1026,9 +1044,22 @@ class Asteroid:
 
             # Tempo total de execução do Asteroid
             a["exec_time"] = exec_time
+            self.exec_time = exec_time
 
             # Junta todas as mensagens em uma string separada por ;
-            a["messages"] = ";".join(messages)
+            a["messages"] = None
+            if len(self.messages) > 0:
+                a["messages"] = ";".join(self.messages)
+
+            # Define o status baseado na execução da etapa de predição. 
+            # Se o asteroid executou a predição é considerado sucesso, independente de ter gerado resultados.
+            if self.predict_occultation is None:
+                a["status"] = 2
+                self.set_failure()
+
+            if self.status != 2:
+                self.set_success()
+                a["status"] = 1
 
         except Exception as e:
             msg = "Failed to consolidate asteroid results. Error: %s" % e
@@ -1036,6 +1067,8 @@ class Asteroid:
             log.error("Asteroid [%s] %s" % (self.name, msg))
 
         finally:
+            # Atualiza o Json do Asteroid
+            self.write_asteroid_json()
             return a
 
     def remove_outputs(self):
