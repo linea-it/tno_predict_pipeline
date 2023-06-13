@@ -110,8 +110,8 @@ def run_job(jobid: int):
     # Cria um diretório para o job
     # TODO: ONLY DEVELOPMENT
     # folder_name = f"teste_{job['id']}"
-    # folder_name = f"predict_{job['id']}-{str(uuid.uuid4())[:8]}"    
-    folder_name = f"{job['id']}-{str(uuid.uuid4())[:8]}"    
+    # folder_name = f"{job['id']}-{str(uuid.uuid4())[:8]}"    
+    folder_name = f"{job['id']}"
     job_path = pathlib.Path(orbit_trace_root).joinpath(folder_name)
     if job_path.exists():
         shutil.rmtree(job_path)

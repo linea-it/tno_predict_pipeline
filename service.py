@@ -11,10 +11,11 @@ from datetime import timezone
 import shutil
 import subprocess
 from datetime import datetime, timezone
-from predict_occultation import predict_job_queue
+from predict_occultation import predict_job_queue, run_job as run_predict_job
 from orbit_trace import run_job, ingest_job_results, main
 
-# run_job(17)
+# run_predict_job(43)
+
 # main('/lustre/t1/tmp/tno/orbit_trace/17-cdcb626a')
 # ingest_job_results('/lustre/t1/tmp/tno/orbit_trace/16-6930783e', 16)
 
@@ -201,4 +202,4 @@ from orbit_trace import run_job, ingest_job_results, main
 # main(job_path)
 # ingest_job_results(job_path, job_id)
 
-# predict_job_queue()
+run_predict_job(44)
