@@ -78,7 +78,8 @@ def orbit_trace_job_queue():
 
     # Inicia o job.
     # print("Deveria executar o job com ID: %s" % job_to_run.get("id")) 
-    orbit_trace_run_job(job_to_run.get("id"))
+    # orbit_trace_run_job(job_to_run.get("id"))
+    return job_to_run.get("id")
 
 
 def orbit_trace_make_job_json_file(job, path):
@@ -92,9 +93,9 @@ def orbit_trace_make_job_json_file(job, path):
         "match_radius": job.get('match_radius'),
         "filter_type": job.get('filter_type'),
         "filter_value": job.get('filter_value'),
-        "bsp_days_to_expire": job.get('bps_days_to_expire'),
-        "parsl_init_blocks": job.get('parsl_init_blocks'),        
-        "debug": bool(job.get('debug')),
+        "bsp_days_to_expire": job.get('bps_days_to_expire', 0),
+        "parsl_init_blocks": job.get('parsl_init_blocks', 600),        
+        "debug": bool(job.get('debug', False)),
         "traceback": None,
         "error": None,
         "time_profile": [],     
@@ -116,8 +117,7 @@ def orbit_trace_make_job_json_file(job, path):
 
     write_job_file(path, job_data)
 
-def orbit_trace_run_job(jobid: int):
-
+def run_job(jobid: int):
     otjdao = OrbitTraceJobDao()    
 
     # TODO: ONLY DEVELOPMENT
@@ -131,7 +131,8 @@ def orbit_trace_run_job(jobid: int):
     # Cria um diretório para o job
     # TODO: ONLY DEVELOPMENT
     # folder_name = f"teste_{job['id']}"
-    folder_name = f"teste_{job['id']}-{str(uuid.uuid4())[:8]}"    
+    # folder_name = f"orbit_trace_{job['id']}-{str(uuid.uuid4())[:8]}"
+    folder_name = f"{job['id']}-{str(uuid.uuid4())[:8]}"        
     job_path = Path(orbit_trace_root).joinpath(folder_name)
     if job_path.exists():
         shutil.rmtree(job_path)

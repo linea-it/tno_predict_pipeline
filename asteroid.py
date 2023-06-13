@@ -49,6 +49,7 @@ class Asteroid:
     __BSP_YEARS_AHEAD = 1
     __BSP_YEARS_BEHIND = 1
     __BSP_DAYS_TO_EXPIRE = 60
+    __BASE_PATH = None
 
     # Status 
     # 0 = undefined
@@ -81,10 +82,10 @@ class Asteroid:
     messages = list()
     exec_time = None
 
-    def __init__(self, id, name, number=None, base_dynclass=None, dynclass=None):
+    def __init__(self, id, name, number=None, base_dynclass=None, dynclass=None, base_path=None):
 
         self.name = name
-        self.alias = name.replace(" ", "").replace("_", "")
+        self.set_alias(name)
 
         # self.id = id
 
@@ -95,6 +96,7 @@ class Asteroid:
         # self.dynclass = dynclass
 
         # Cria ou recupera o path do asteroid
+        self.__BASE_PATH = base_path
         self.path = self.get_or_create_dir()
 
         # Verifica se existe arquivo json para o objeto se existir carrega o conteudo na classe
@@ -117,6 +119,10 @@ class Asteroid:
 
     def __getitem__(self, item):
         return self.__dict__[item]
+    
+    def set_alias(self, name):
+        self.alias = name.replace(" ", "").replace("_", "").replace("/", "")
+
 
     def to_dict(self):
         return dict(
@@ -136,11 +142,15 @@ class Asteroid:
         return self.__log
 
     def get_base_path(self):
-        # Carrega as variaveis de configuração do arquivo config.ini
-        config = configparser.ConfigParser()
-        config.read(os.path.join(os.environ["EXECUTION_PATH"], "config.ini"))
-        ASTEROID_PATH = config["DEFAULT"].get("AsteroidPath")
-        return ASTEROID_PATH
+        base_path = self.__BASE_PATH
+        if not base_path:
+            # Carrega as variaveis de configuração do arquivo config.ini
+            config = configparser.ConfigParser()
+            config.read(os.path.join(os.environ["EXECUTION_PATH"], "config.ini"))
+            base_path = config["DEFAULT"].get("AsteroidPath")
+            self.__BASE_PATH = base_path
+
+        return base_path
 
     def get_jpl_email(self):
         # Carrega as variaveis de configuração do arquivo config.ini
@@ -201,7 +211,7 @@ class Asteroid:
         self.write_asteroid_json()
 
     def get_bsp_path(self):
-        filename = "{}.bsp".format(self.alias)
+        filename = self.get_bsp_filename()
         filepath = pathlib.Path.joinpath(pathlib.Path(self.path), filename)
 
         return filepath
@@ -222,6 +232,10 @@ class Asteroid:
 
         return end.strftime("%Y-%m-%d")
 
+    def get_bsp_filename(self):
+        return f'{self.alias}.bsp'
+
+
     def download_jpl_bsp(self, end_period, force=False, start_period=None):
         """
             Exemplo do retorno:
@@ -238,8 +252,10 @@ class Asteroid:
         """
         log = self.get_log()
         log.debug("Downloading BSP JPL started")
+        log.debug(self.get_bsp_path())
 
         bsp_path = self.get_bsp_path()
+        bsp_filename = self.get_bsp_filename()
 
         if force is True and bsp_path.exists():
             # Remove o arquivo se já existir e force=True
@@ -257,9 +273,8 @@ class Asteroid:
 
         try:
             bsp_path = get_bsp_from_jpl(
-                self.name, start_period, end_period, self.get_jpl_email(), self.path
+                self.name, start_period, end_period, self.get_jpl_email(), self.path, bsp_filename
             )
-
             t1 = dt.now(tz=timezone.utc)
             tdelta = t1 - t0
 
@@ -309,8 +324,6 @@ class Asteroid:
 
                 # Path para o arquivo BSP
                 bsp_path = self.get_bsp_path()
-                # bsp_path = pathlib.Path.joinpath(
-                #     pathlib.Path(self.path), self.bsp_jpl['filename'])
 
                 # Verificar se o arquivo BSP existe
                 if bsp_path.exists():
