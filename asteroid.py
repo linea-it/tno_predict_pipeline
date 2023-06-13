@@ -272,11 +272,9 @@ class Asteroid:
         end_period = self.calculate_bsp_end_period(end_period)
 
         try:
-            log.debug("TESTE")
             bsp_path = get_bsp_from_jpl(
                 self.name, start_period, end_period, self.get_jpl_email(), self.path, bsp_filename
             )
-            log.debug("TESTE2")
             t1 = dt.now(tz=timezone.utc)
             tdelta = t1 - t0
 

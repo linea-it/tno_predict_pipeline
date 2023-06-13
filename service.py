@@ -202,4 +202,5 @@ from orbit_trace import run_job, ingest_job_results, main
 # main(job_path)
 # ingest_job_results(job_path, job_id)
 
-run_predict_job(44)
+# run_predict_job(44)
+predict_job_queue()

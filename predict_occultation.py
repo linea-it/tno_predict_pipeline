@@ -815,8 +815,12 @@ def main(path):
         # write_job_file(current_path, job)
         update_job(job)
 
-        # Altera o path de execução para o path original
-        os.chdir(original_path)
+        # Remove o diretório de asteroids do job. 
+        if not job['debug']:
+            log.debug("Removing asteroid directory.")
+            asteroid_path = pathlib.Path(job['path']).joinpath("asteroids")
+            shutil.rmtree(asteroid_path)
+            log.info("Directory of asteroids has been removed!")
 
         log.info(
             "Asteroids Success: [%s] Failure: [%s] Total: [%s]"
@@ -825,6 +829,11 @@ def main(path):
 
         log.info("Execution Time: %s" % tdelta)
         log.info("Predict Occultation is done!.")
+
+
+        # Altera o path de execução para o path original
+        os.chdir(original_path)
+
 
 # Exemplo de execução do script
 # python predict_occultation.py /lustre/t1/tmp/tno/predict_occultation/<job_folder>
