@@ -1,13 +1,12 @@
 from sqlalchemy import create_engine, Table, MetaData
-from sqlalchemy.sql import select, delete, update, and_
+from sqlalchemy.sql import select, delete, update, insert, and_
 import collections
 import configparser
-import datetime
 import os
 from sqlalchemy.pool import NullPool
 import warnings
 from sqlalchemy import exc as sa_exc
-
+from datetime import datetime, timezone, timedelta
 
 class Dao():
 
@@ -252,13 +251,12 @@ class OccultationDao(Dao):
 
             return rows
 
-    def delete_by_asteroid_id(self, id, start_period, end_period):
+    def delete_by_asteroid_id(self, id, start_period: str, end_period: str):
 
         stm = delete(self.tbl).where(
             and_(
                 self.tbl.c.asteroid_id == id,
-                self.tbl.c.date_time.between(
-                    str(start_period), str(end_period))
+                self.tbl.c.date_time.between(start_period, end_period)
             )
         )
 
@@ -328,7 +326,7 @@ class OrbitTraceJobDao(Dao):
             status=job['status'],
             start=job['start'],
             end=job['end'],
-            exec_time=datetime.timedelta(seconds=job['exec_time']),
+            exec_time=timedelta(seconds=job['exec_time']),
             error=job['error'],
             traceback=job['traceback'],
             count_asteroids=job.get('count_asteroids', 0),
@@ -350,8 +348,6 @@ class OrbitTraceJobDao(Dao):
 
 
     def development_reset_job(self, job_id):
-        from datetime import datetime, timezone, timedelta
-
         job = self.get_job_by_id(job_id)
 
         stm = update(self.tbl).where(and_(self.tbl.c.id == int(job['id']))).values(
@@ -451,14 +447,14 @@ class PredictOccultationJobDao(Dao):
     def update_job(self, job):
 
         if isinstance(job['status'], str):
-            job['status'] = self.get_status_id_from_string(job['status'])
+            status = self.get_status_id_from_string(job['status'])
 
         stm = update(self.tbl).where(and_(self.tbl.c.id == int(job['id']))).values(
-            status=job['status'],
+            status=status,
             path=job['path'],
-            start=job['start'],
-            end=job['end'],
-            exec_time=datetime.timedelta(seconds=job['exec_time']),
+            start=job.get('start', None),
+            end=job.get('end', None),
+            exec_time=timedelta(seconds=job.get('exec_time', 0)),
             # h_exec_time=job.get('h_exec_time', None),
             avg_exec_time=job.get('avg_exec_time', 0),
             count_asteroids=job.get('count_asteroids', 0),
@@ -466,14 +462,37 @@ class PredictOccultationJobDao(Dao):
             count_occ=job.get('occultations', 0),
             count_success=job.get('count_success', 0),
             count_failures=job.get('count_failures', 0),
-            error=job['error'],
-            traceback=job['traceback'],            
+            error=job.get('error', None),
+            traceback=job.get('traceback', None),            
         )
 
         engine = self.get_db_engine()
         with engine.connect() as con:
             return con.execute(stm)    
         
+    def development_reset_job(self, job_id):
+        job = self.get_job_by_id(job_id)
+
+        stm = update(self.tbl).where(and_(self.tbl.c.id == int(job['id']))).values(
+            path="",
+            submit_time=datetime.now(tz=timezone.utc),
+            status=1,
+            start=None,
+            end=None,
+            exec_time=timedelta(seconds=0),
+            error=None,
+            traceback=None,
+            count_asteroids=0,
+            count_asteroids_with_occ=0,
+            count_occ=0,
+            count_success=0,
+            count_failures=0,
+            avg_exec_time=0,
+        )
+
+        engine = self.get_db_engine()
+        with engine.connect() as con:
+            return con.execute(stm)
 
 class PredictOccultationJobResultDao(Dao):
     def __init__(self):
@@ -500,3 +519,75 @@ class PredictOccultationJobResultDao(Dao):
             rows = con.execute(stm)
 
             return rows
+        
+class PredictOccultationJobStatusDao(Dao):
+    def __init__(self):
+        super(PredictOccultationJobStatusDao, self).__init__()
+
+        self.tbl = self.get_table('tno_predictionjobstatus')
+
+    def update_or_insert(self, job_id: int, step: int,
+            task: str = None, 
+            status: int = None,
+            count: int = 0,
+            current: int = 0,
+            average_time: float = 0,
+            time_estimate: float = 0,
+            success: int = 0,
+            failures: int = 0):
+        
+        prev = self.get_by_step(job_id, step )
+
+        stm = insert(self.tbl)\
+            .values(
+                job_id=job_id,
+                step=step,
+                task=task,
+                status=int(status),
+                count=int(count),
+                current=int(current),
+                average_time=average_time,
+                time_estimate=time_estimate,
+                success=success,
+                failures=failures,
+                updated=datetime.now(tz=timezone.utc)
+            )
+
+        if prev is not None:
+            stm = update(self.tbl)\
+            .where(and_(
+                self.tbl.c.job_id == job_id, 
+                self.tbl.c.step == step))\
+            .values(
+                task=task,
+                status=int(status),
+                count=int(count),
+                current=int(current),
+                average_time=average_time,
+                time_estimate=time_estimate,
+                success=success,
+                failures=failures,
+                updated=datetime.now(tz=timezone.utc)
+            )
+
+        engine = self.get_db_engine()
+        with engine.connect() as con:
+            return con.execute(stm)
+
+    def get_by_step(self, job_id: int, step: int):
+        stm = select(self.tbl.c).where(and_(
+            self.tbl.c.job_id == job_id,
+            self.tbl.c.step == step))
+        return self.fetch_one_dict(stm)
+
+
+    def delete_by_job_id(self, job_id):
+
+        stm = delete(self.tbl).where(and_(
+            self.tbl.c.job_id == job_id))
+
+        engine = self.get_db_engine()
+        with engine.connect() as con:
+            rows = con.execute(stm)
+
+            return rows        

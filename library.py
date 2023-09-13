@@ -193,7 +193,7 @@ def submit_job(name, number, start, end, step, path):
             "queues": 1,
             "submit_params": {
                 "Universe": "docker",
-                "Docker_image": "linea/praiaoccultation:v2.8.6",
+                "Docker_image": "linea/praiaoccultation:v2.8.8",
                 "executable": "/usr/local/bin/python",
                 "arguments": arguments,
                 "environment": "DB_URI={}".format(DB_URI),

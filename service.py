@@ -11,8 +11,8 @@ from datetime import timezone
 import shutil
 import subprocess
 from datetime import datetime, timezone
-from predict_occultation import predict_job_queue, run_job as run_predict_job
-from orbit_trace import run_job, ingest_job_results, main
+from predict_occultation import predict_job_queue, run_job as run_predict_job, rerun_job, check_tasks, ingest_job_results
+# from orbit_trace import run_job, ingest_job_results, main
 
 # run_predict_job(43)
 
@@ -40,167 +40,26 @@ from orbit_trace import run_job, ingest_job_results, main
 # ps auxww | grep 'celery worker' | awk '{print $2}' | xargs kill -9
 # ps auxww | grep 'celery beat' | awk '{print $2}' | xargs kill -9
 
+# run_predict_job(57)
+# rerun_job(57)
+# check_tasks(56)
+# predict_job_queue()
 
+# from pathlib import Path
 
+# rerun_job(64)
+# from time import sleep
+# flag = False
+# while flag != True:
+#     flag = check_tasks(64)
+#     sleep(30)
 
-# from tno_celery.tasks import add
-# result = add.delay(4, 4)
-# # result.ready()
-# print(result.ready())
-# a = result.get(timeout=1)
+# fp = Path('/lustre/t1/tmp/tno/predict_occultation/57')
+# count_results_ingested = ingest_job_results(fp, 57)
 
-# print("Antes de enviar a task")
-# from tno_celery.tasks import orbit_trace_queue, orbit_trace_run
-# print("task enviada")
-# result = orbit_trace_queue.delay()
-# print("antes task ready")
-# result.ready()
-# print("task Ready (%s)" % result.ready())
-# a = result.get()
-# print(a)
+# check_tasks(61)
 
-# def job_to_run():
-#     """Retorna o job com status=1 Idle mas antigo.
+# from predict_occultation import get_job_running
 
-#     Returns:
-#         job: Orbit Trace Job model
-#     """
-#     dao = PredictOccultationJobDao()
-#     job = dao.get_job_by_status(1)
-
-#     return job
-
-# def has_job_running() -> bool:
-#     """Verifica se há algum job com status = 2 Running.
-
-#     Returns:
-#         bool: True caso haja algum job sendo executado.
-#     """
-#     dao = PredictOccultationJobDao()
-#     job = dao.get_job_by_status(2)
-
-#     if job is not None:
-#         return True
-#     else:
-#         return False
-
-# def make_job_json_file(job, path):
-
-#     job_data = dict({
-#         "id": job.get('id'),
-#         "status": "Submited",
-#         "submit_time": job.get('submit_time').astimezone(timezone.utc).isoformat(),
-#         "estimated_execution_time": str(job.get('estimated_execution_time')),
-#         "path": str(path),
-#         "filter_type": job.get('filter_type'),
-#         "filter_value": job.get('filter_value'),
-#         "predict_start_date": job.get("predict_start_date").isoformat(),
-#         "predict_end_date": job.get("predict_end_date").isoformat(),
-#         "predict_step": job.get("predict_step", 600),        
-#         "debug": bool(job.get('debug', False)),
-#         "error": None,
-#         "traceback": None,
-#         # Parsl init block não está sendo utilizado no pipeline
-#         # "parsl_init_block": int(job.get('parsl_init_block', 600)),
-#         # TODO: Adicionar parametro para catalog 
-#         # "catalog_id": job.get('catalog_id')
-#         # TODO: Estes parametros devem ser gerados pelo pipeline lendo do config.
-#         # TODO: Bsp e leap second deve fazer a query e verificar o arquivo ou fazer o download.
-#         "bsp_planetary": {
-#             "name": "de440",
-#             "filename": "de440.bsp",
-#             "absolute_path": "/lustre/t1/tmp/tno/bsp_planetary/de440.bsp",
-#         },
-#         "leap_seconds": {
-#             "name": "naif0012",
-#             "filename": "naif0012.tls",
-#             "absolute_path": "/lustre/t1/tmp/tno/leap_seconds/naif0012.tls",
-#         },           
-#         # "force_refresh_inputs": False,
-#         # "inputs_days_to_expire": 5,        
-#     })
-
-#     write_job_file(path, job_data)
-
-# def run_job(jobid: int):
-
-#     dao = PredictOccultationJobDao()
-
-#     # TODO: ONLY DEVELOPMENT
-#     # dao.development_reset_job(jobid)
-
-#     job = dao.get_job_by_id(jobid)
-
-#     config = get_configs()
-#     orbit_trace_root = config["DEFAULT"].get("PredictOccultationJobPath")
-
-#     # Cria um diretório para o job
-#     # TODO: ONLY DEVELOPMENT
-#     folder_name = f"teste_{job['id']}"
-#     # folder_name = f"teste_{job['id']}-{str(uuid.uuid4())[:8]}"    
-#     job_path = Path(orbit_trace_root).joinpath(folder_name)
-#     if job_path.exists():
-#         shutil.rmtree(job_path)
-#     job_path.mkdir(parents=True, exist_ok=False)
-
-#     # Escreve o arquivo job.json
-#     make_job_json_file(job, job_path)
-
-#     # # Executa o job usando subproccess.
-#     # env_file = Path(os.environ['EXECUTION_PATH']).joinpath('env.sh')
-#     # proc = subprocess.Popen(
-#     #     # f"source /lustre/t1/tmp/tno/pipelines/env.sh; python orbit_trace.py {job_path}",
-#     #     f"source {env_file}; python orbit_trace.py {job_path}",
-#     #     stdout=subprocess.PIPE,
-#     #     stderr=subprocess.PIPE,
-#     #     shell=True,
-#     #     text=True
-#     # )
-
-#     # import time
-#     # while proc.poll() is None:
-#     #     print("Shell command is still running...")
-#     #     time.sleep(1)
-
-#     # # When arriving here, the shell command has finished.
-#     # # Check the exit code of the shell command:
-#     # print(proc.poll())
-#     # # 0, means the shell command finshed successfully.
-
-#     # # Check the output and error of the shell command:
-#     # output, error = proc.communicate()
-#     # print(output)
-#     # print(error)
-
-# def job_queue():
-
-#     # Verifica se ha algum job sendo executado.
-#     if has_job_running():
-#         # print("Já existe um job em execução.")
-#         return
-
-#     # Verifica o proximo job com status Idle
-#     to_run = job_to_run()
-#     if not to_run:
-#         # print("Nenhum job para executar.")
-#         return
-
-#     # Inicia o job.
-#     # print("Deveria executar o job com ID: %s" % to_run.get("id")) 
-#     run_job(to_run.get("id"))
-
-# job_queue()
-
-# TODO: Já escreve o arquivo job json 
-# - Falta alterar o pipeline predict para executar com chamada de função.
-# - Falta alterar o metodo de update do job.
-
-# from predict_occultation import main, ingest_job_results
-# job_id = 16
-# job_path = f"/lustre/t1/tmp/tno/predict_occultation/teste_{job_id}"
-# run_job(job_id)
-# main(job_path)
-# ingest_job_results(job_path, job_id)
-
-# run_predict_job(44)
-predict_job_queue()
+# running = get_job_running()
+# print(running)
