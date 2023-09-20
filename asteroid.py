@@ -274,7 +274,7 @@ class Asteroid:
 
         try:
             bsp_path = get_bsp_from_jpl(
-                self.name, start_period, end_period, self.get_jpl_email(), self.path, bsp_filename
+                self.name, start_period, end_period, self.path, bsp_filename
             )
             t1 = dt.now(tz=timezone.utc)
             tdelta = t1 - t0

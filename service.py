@@ -14,7 +14,10 @@ from datetime import datetime, timezone
 from predict_occultation import predict_job_queue, run_job as run_predict_job, rerun_job, check_tasks, ingest_job_results
 # from orbit_trace import run_job, ingest_job_results, main
 
-# run_predict_job(43)
+# from external_inputs.jpl import get_bsp_from_jpl
+# get_bsp_from_jpl("Chiron", "2023-01-01", "2023-12-31", "/lustre/t1/tmp/tno/tmp", "Chiron.bsp")
+
+run_predict_job(74)
 
 # main('/lustre/t1/tmp/tno/orbit_trace/17-cdcb626a')
 # ingest_job_results('/lustre/t1/tmp/tno/orbit_trace/16-6930783e', 16)
