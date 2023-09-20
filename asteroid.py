@@ -82,18 +82,16 @@ class Asteroid:
     messages = list()
     exec_time = None
 
-    def __init__(self, id, name, number=None, base_dynclass=None, dynclass=None, base_path=None):
+    def __init__(self, name, id=None, number=None, base_dynclass=None, dynclass=None, base_path=None):
 
         self.name = name
         self.set_alias(name)
 
-        # self.id = id
-
-        # if number is not None and number != "-" and number != "":
-        #     self.number = str(number)
-
-        # self.base_dynclass = base_dynclass
-        # self.dynclass = dynclass
+        self.id = id
+        if number is not None and number != "-" and number != "":
+            self.number = str(number)
+        self.base_dynclass = base_dynclass
+        self.dynclass = dynclass
 
         # Cria ou recupera o path do asteroid
         self.__BASE_PATH = base_path
@@ -107,15 +105,15 @@ class Asteroid:
         # Mas no momento existe jsons com valores antigos e invalidos 
         # para corrigir isto vou sobrescrever alguns campos apos a leitura do json.
         # Os campos que vem por parametro vem do banco de dados que é sempre atualizado.
-        self.id = id
-        if number is not None and number != "-" and number != "":
-            self.number = str(number)
+
+        # if number is not None and number != "-" and number != "":
+        #     self.number = str(number)
         
-        if base_dynclass is not None:
-            self.base_dynclass = base_dynclass
+        # if base_dynclass is not None:
+        #     self.base_dynclass = base_dynclass
             
-        if dynclass is not None:
-            self.dynclass = dynclass
+        # if dynclass is not None:
+        #     self.dynclass = dynclass
 
     def __getitem__(self, item):
         return self.__dict__[item]
@@ -132,8 +130,11 @@ class Asteroid:
         )
 
     def set_log(self, logname):
-        self.__logname = logname
-        self.__log = logging.getLogger(logname)
+        if isinstance(logname, str):
+            self.__logname = logname
+            self.__log = logging.getLogger(logname)
+        else:
+            self.__log = logname
 
     def get_log(self):
         if self.__log is None:
@@ -273,7 +274,7 @@ class Asteroid:
 
         try:
             bsp_path = get_bsp_from_jpl(
-                self.name, start_period, end_period, self.get_jpl_email(), self.path, bsp_filename
+                self.name, start_period, end_period, self.path, bsp_filename
             )
             t1 = dt.now(tz=timezone.utc)
             tdelta = t1 - t0
@@ -763,7 +764,7 @@ class Asteroid:
         # log.debug("Removed Files: [%s]" % ", ".join(removed_files))
         log.info("Removed [%s] files in %s" % (len(removed_files), tdelta))
 
-    def register_occultations(self, start_period, end_period):
+    def register_occultations(self, start_period: str, end_period: str):
 
         log = self.get_log()
 

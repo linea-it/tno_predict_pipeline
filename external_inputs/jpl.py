@@ -6,7 +6,7 @@ import requests
 import spiceypy as spice
 
 
-def get_bsp_from_jpl(identifier, initial_date, final_date, email, directory, filename):
+def get_bsp_from_jpl(identifier, initial_date, final_date, directory, filename):
     """Download bsp files from JPL database
 
         Bsp files, which have information to generate
@@ -28,14 +28,10 @@ def get_bsp_from_jpl(identifier, initial_date, final_date, email, directory, fil
         initial_date (str): Date the bsp file is to begin, within span [1900-2100].
             Examples:
                 '2003-02-01'
-                '2003-3-5'
         final_date (str): Date the bsp file is to end, within span [1900-2100].
             Must be more than 32 days later than [initial_date].
             Examples:
                 '2006-01-12'
-                '2006-1-12'
-        email (str): User's e-mail contact address.
-            Example: username@user.domain.name
         directory (str): Directory path to save the bsp files.
 
     Returns:
@@ -50,23 +46,31 @@ def get_bsp_from_jpl(identifier, initial_date, final_date, email, directory, fil
         raise ValueError(
             'The [final_date] must be more than 32 days later than [initial_date]')
 
-    urlJPL = 'https://ssd.jpl.nasa.gov/x/smb_spk.cgi?OPTION=Make+SPK'
+    # https://ssd.jpl.nasa.gov/api/horizons.api?
+    # format=text
+    # &EPHEM_TYPE=SPK
+    # &COMMAND=chiron
+    # &START_TIME=2023-Jan-01
+    # &STOP_TIME=2023-Mar-30
+    urlJPL = 'https://ssd.jpl.nasa.gov/api/horizons.api'
 
     path = pathlib.Path(directory)
     if not path.exists():
         raise ValueError('The directory {} does not exist!'.format(path))
 
     parameters = {
-        'OBJECT': identifier,
-        'START': date1.strftime('%Y-%b-%d'),
-        'STOP': date2.strftime('%Y-%b-%d'),
-        'EMAIL': email,
-        'TYPE': '-B'
+        'format': "text",
+        'EPHEM_TYPE': "SPK",
+        'COMMAND': identifier,
+        'START_TIME': date1.strftime('%Y-%b-%d'),
+        'STOP_TIME': date2.strftime('%Y-%b-%d'),
+        # 'EMAIL': email,
+        # 'TYPE': '-B'
     }
 
     r = requests.get(urlJPL, params=parameters, stream=True)
     bspFormat = r.headers['Content-Type']
-    if r.status_code == requests.codes.ok and bspFormat == 'application/download':
+    if r.status_code == requests.codes.ok and bspFormat == 'text/plain':
         filepath = path.joinpath(filename)
         with open(filepath, 'wb') as f:
             r.raw.decode_content = True
@@ -76,7 +80,7 @@ def get_bsp_from_jpl(identifier, initial_date, final_date, email, directory, fil
     else:
         # TODO: Add a Debug
         raise Exception(
-            "It was not able to download the bsp file for object.")
+            f"It was not able to download the bsp file for object. Error: {r.status_code}")
 
 def findSPKID(bsp):
     """Search the spk id of a small Solar System object from bsp file

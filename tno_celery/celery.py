@@ -17,17 +17,20 @@ app.conf.update(
 
 app.conf.beat_schedule = {
     # Verifica a tabela de jobs de ocultação a cada 30 segundos a procura de jobs a serem executados.
-    'orbit-check-to-run': {
-        'task': 'tno_celery.tasks.orbit_trace_queue',
-        'schedule': 30.0,
-        # 'options': {'queue' : 'single'}
-    },
+    # 'orbit-check-to-run': {
+    #     'task': 'tno_celery.tasks.orbit_trace_queue',
+    #     'schedule': 30.0,
+    #     # 'options': {'queue' : 'single'}
+    # },
     # Verifica a tabela de jobs de predição a cada 30 segundos a procura de jobs a serem executados.
     'predict-check-to-run': {
         'task': 'tno_celery.tasks.predict_occultation_queue',
         'schedule': 30.0,
-        # 'options': {'queue' : 'single'}
-    },        
+    },
+    'predict-check-running': {
+        'task': 'tno_celery.tasks.predict_occultation_running',
+        'schedule': 30.0,
+    },            
 }
 
 if __name__ == '__main__':
