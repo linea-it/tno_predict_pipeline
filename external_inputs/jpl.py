@@ -1,7 +1,7 @@
 import pathlib
 import shutil
 from datetime import datetime as dt
-
+import json
 import requests
 import spiceypy as spice
 
@@ -46,6 +46,12 @@ def get_bsp_from_jpl(identifier, initial_date, final_date, directory, filename):
         raise ValueError(
             'The [final_date] must be more than 32 days later than [initial_date]')
 
+    path = pathlib.Path(directory)
+    if not path.exists():
+        raise ValueError('The directory {} does not exist!'.format(path))
+
+    spk_file = path.joinpath(filename)
+
     # https://ssd.jpl.nasa.gov/api/horizons.api?
     # format=text
     # &EPHEM_TYPE=SPK
@@ -53,32 +59,38 @@ def get_bsp_from_jpl(identifier, initial_date, final_date, directory, filename):
     # &START_TIME=2023-Jan-01
     # &STOP_TIME=2023-Mar-30
     urlJPL = 'https://ssd.jpl.nasa.gov/api/horizons.api'
-
-    path = pathlib.Path(directory)
-    if not path.exists():
-        raise ValueError('The directory {} does not exist!'.format(path))
-
     parameters = {
-        'format': "text",
+        'format': "json",
         'EPHEM_TYPE': "SPK",
+        'OBJ_DATA': "YES",
         'COMMAND': identifier,
         'START_TIME': date1.strftime('%Y-%b-%d'),
         'STOP_TIME': date2.strftime('%Y-%b-%d'),
-        # 'EMAIL': email,
-        # 'TYPE': '-B'
     }
-
     r = requests.get(urlJPL, params=parameters, stream=True)
-    bspFormat = r.headers['Content-Type']
-    if r.status_code == requests.codes.ok and bspFormat == 'text/plain':
-        filepath = path.joinpath(filename)
-        with open(filepath, 'wb') as f:
-            r.raw.decode_content = True
-            shutil.copyfileobj(r.raw, f)
+    if r.status_code == requests.codes.ok and r.headers['Content-Type'] == 'application/json':
+        try:
+            data = json.loads(r.text)
+            # If the SPK file was generated, decode it and write it to the output file:
+            if "spk" in data:
+                with open(spk_file, "wb") as f:
+                    # Decode and write the binary SPK file content:
+                    f.write(base64.b64decode(data["spk"]))
+                    f.close()
 
-        return filepath
+                return spk_file 
+            else:
+                # Otherwise, the SPK file was not generated so output an error:
+                raise Exception(f"SPK file not generated: {response.text}")
+        except ValueError as e:
+            raise Exception(f"Unable to decode JSON. {e}")
+        except OSError as e:
+            raise Exception(f"Unable to create file '{spk_file}': {e}")
+        except Exception as e:
+            raise(e)
+    elif r.status_code == 400:
+        raise Exception("Bad Request code 400 - {r.text}")
     else:
-        # TODO: Add a Debug
         raise Exception(
             f"It was not able to download the bsp file for object. Error: {r.status_code}")
 
