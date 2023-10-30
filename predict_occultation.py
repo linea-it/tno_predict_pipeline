@@ -30,8 +30,12 @@ from library import (
     submit_job,
 )
 
-from app import run_pipeline
-from parsl_config import get_config
+try:
+    from app import run_pipeline
+    from parsl_config import get_config
+except Exception as error:
+    print('Error: %s' % str(error))
+    raise('Predict Occultation pipeline not installed!')
 
 import parsl
 
