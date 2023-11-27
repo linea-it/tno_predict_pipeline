@@ -1,4 +1,6 @@
 config.ini
 *.pyc
 archive
-log
+docker-compose.yml
+rabbitmq-data/*
+log/*

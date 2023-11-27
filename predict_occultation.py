@@ -831,7 +831,11 @@ def submit_tasks(jobid: int):
                     errobj = task.exception()
 
                     if errobj:
-                        status = errobj.exitcode
+                        try:
+                            status = errobj.exitcode
+                        except AttributeError:
+                            status = -1
+                        log.warn('JobParslError: %s' % str(status))
                     else:
                         status = task.result()
 
@@ -1010,6 +1014,7 @@ def submit_tasks(jobid: int):
 
         log.info("Finish Submit tasks")
         os.chdir(original_path)
+        parsl.clear()
         return True
 
 

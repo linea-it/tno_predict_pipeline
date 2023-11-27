@@ -1,4 +1,4 @@
-FROM python:3.10
+FROM python:3.8
 
 # If this is set to a non-empty string, Python won’t try
 # to write .pyc files on the import of source modules
@@ -30,10 +30,10 @@ ARG USERNAME=tnouser
 ARG USER_UID=1000
 ARG USER_GID=1000
 
-ENV PIPELINE_ROOT="/usr/src/app"
+ENV PIPELINE_ROOT="/lustre/t1/cl/ton/workflows/base"
 ENV PIPELINE_PATH="/lustre/t1/cl/ton/workflows/pipelines/predict_occultation/pipeline"
 ENV PIPELINE_PREDICT_OCC="/lustre/t1/cl/ton/workflows/pipelines/predict_occultation"
-ENV PYTHONPATH="/usr/src/app:$PIPELINE_PATH:$PIPELINE_PREDICT_OCC"
+ENV PYTHONPATH="$PIPELINE_ROOT:$PIPELINE_PATH:$PIPELINE_PREDICT_OCC"
 ENV WORKFLOW_PATH=$PIPELINE_ROOT
 ENV EXECUTION_PATH=$PIPELINE_ROOT
 
@@ -41,17 +41,20 @@ ENV EXECUTION_PATH=$PIPELINE_ROOT
 # https://code.visualstudio.com/remote/advancedcontainers/add-nonroot-user
 RUN groupadd --gid $USER_GID $USERNAME \
     && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
-    && mkdir -p /usr/src/app /log $PIPELINE_PATH $PIPELINE_PREDICT_OCC \
-    && chown -R $USER_UID:$USER_GID /usr/src/app /log $PIPELINE_PATH $PIPELINE_PREDICT_OCC
+    && groupadd --gid 15010 ton \
+    && useradd --uid 31670 --gid 15010 -m app.tno \
+    && mkdir -p $PIPELINE_ROOT /log $PIPELINE_PATH $PIPELINE_PREDICT_OCC \
+    && chown -R $USER_UID:$USER_GID $PIPELINE_ROOT /log $PIPELINE_PATH $PIPELINE_PREDICT_OCC
 
-WORKDIR /usr/src/app
-COPY . /usr/src/app
+WORKDIR $PIPELINE_ROOT
+COPY . $PIPELINE_ROOT
 
 COPY --chmod=0775 ./entrypoint.sh /entrypoint.sh
 COPY --chmod=0775 ./start.sh /start.sh
+COPY --chmod=0775 ./start_beat.sh /start_beat.sh
 
 # Switch to non-priviliged user and run app
-USER tnouser
+USER $USERNAME
 
 # NÃO adicionar o script /start.sh no entrypoint
 # O /start.sh deve ser adicionado no docker-compose command.

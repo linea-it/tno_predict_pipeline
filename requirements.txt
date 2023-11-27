@@ -11,3 +11,4 @@ scipy==1.7.3
 requests==2.27.1
 spiceypy==5.0.1
 sqlalchemy==1.4.32
+celery==5.3
