@@ -4,6 +4,7 @@ from datetime import datetime as dt
 import json
 import requests
 import spiceypy as spice
+import base64
 
 
 def get_bsp_from_jpl(identifier, initial_date, final_date, directory, filename):

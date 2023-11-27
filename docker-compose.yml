@@ -1,0 +1,17 @@
+version: "3.6"
+services:
+
+  tno_pipeline: 
+    user: "1000:1000"
+    build: .
+    command: /start.sh
+    volumes:
+      # Diretório de Código fonte da aplicação
+      - .:/usr/src/app
+      # Diretório de execução dos pipelines
+      - ./archive:/lustre/t1/cl/ton/workflows/pipelines/predict_occultation
+      # Diretório de Logs
+      - ./log:/log
+    environment:
+      - DB_URI=postgresql+psycopg2://untrustedprod:untrusted@desdb4.linea.gov.br:5432/prod_gavo
+      

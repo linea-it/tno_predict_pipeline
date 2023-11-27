@@ -1,0 +1,33 @@
+version: "3.6"
+services:
+  tno_pipeline: &pipeline 
+    user: "1000:1000"
+    build: .
+    command: /start.sh
+    network_mode: "host"
+    volumes:
+      # Diretório de execução dos pipelines
+      - <WORKFLOW PATH>:/lustre/t1/cl/ton/workflows
+      # Diretório de Logs
+      - ./log:/log
+    environment:
+      - DB_URI=<DB STRING>
+      - USER=app.tno
+    depends_on:
+      - rabbit
+  celery_beat: &beat
+    <<: *pipeline
+    command: /start_beat.sh
+    depends_on:
+      - tno_pipeline
+  rabbit:
+    image: rabbitmq:3-management
+    hostname: rabbit_tno_pipelines
+    environment:
+      RABBITMQ_DEFAULT_USER: tno
+      RABBITMQ_DEFAULT_PASS: tnorabbit123
+      RABBITMQ_DEFAULT_VHOST: tno_vhost
+    volumes:
+      - ./rabbitmq-data:/var/lib/rabbitmq/
+    ports:
+      - 56723:5672

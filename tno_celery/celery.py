@@ -1,7 +1,7 @@
 from celery import Celery
 # from celery.schedules import crontab
 
-broker_url = 'amqp://tno:tnorabbit123@srvnode04:56722/tno_vhost'
+broker_url = 'amqp://tno:tnorabbit123@srvnode04:56723/tno_vhost'
 
 result_backend = 'db+sqlite:///results.db'
 include=['tno_celery.tasks']
@@ -27,10 +27,10 @@ app.conf.beat_schedule = {
         'task': 'tno_celery.tasks.predict_occultation_queue',
         'schedule': 30.0,
     },
-    'predict-check-running': {
-        'task': 'tno_celery.tasks.predict_occultation_running',
-        'schedule': 30.0,
-    },            
+    #'predict-check-running': {
+    #    'task': 'tno_celery.tasks.predict_occultation_running',
+    #    'schedule': 30.0,
+    #},            
 }
 
 if __name__ == '__main__':

@@ -43,7 +43,6 @@ def serialize(obj):
 
 
 class Asteroid:
-
     __log = None
     __BSP_START_PERIOD = "2012-01-01"
     __BSP_YEARS_AHEAD = 1
@@ -51,7 +50,7 @@ class Asteroid:
     __BSP_DAYS_TO_EXPIRE = 60
     __BASE_PATH = None
 
-    # Status 
+    # Status
     # 0 = undefined
     # 1 = Success
     # 2 = Failure
@@ -82,8 +81,15 @@ class Asteroid:
     messages = list()
     exec_time = None
 
-    def __init__(self, name, id=None, number=None, base_dynclass=None, dynclass=None, base_path=None):
-
+    def __init__(
+        self,
+        name,
+        id=None,
+        number=None,
+        base_dynclass=None,
+        dynclass=None,
+        base_path=None,
+    ):
         self.name = name
         self.set_alias(name)
 
@@ -101,26 +107,25 @@ class Asteroid:
         json_data = self.read_asteroid_json()
         self.__dict__.update(json_data)
 
-        # TODO: O Correto é que a leitura do json seja feita por ultimo. 
-        # Mas no momento existe jsons com valores antigos e invalidos 
+        # TODO: O Correto é que a leitura do json seja feita por ultimo.
+        # Mas no momento existe jsons com valores antigos e invalidos
         # para corrigir isto vou sobrescrever alguns campos apos a leitura do json.
         # Os campos que vem por parametro vem do banco de dados que é sempre atualizado.
 
         # if number is not None and number != "-" and number != "":
         #     self.number = str(number)
-        
+
         # if base_dynclass is not None:
         #     self.base_dynclass = base_dynclass
-            
+
         # if dynclass is not None:
         #     self.dynclass = dynclass
 
     def __getitem__(self, item):
         return self.__dict__[item]
-    
+
     def set_alias(self, name):
         self.alias = name.replace(" ", "").replace("_", "").replace("/", "")
-
 
     def to_dict(self):
         return dict(
@@ -184,7 +189,6 @@ class Asteroid:
         self.status = 2
 
     def read_asteroid_json(self):
-
         filename = "{}.json".format(self.alias)
 
         filepath = pathlib.Path(self.path, filename)
@@ -197,7 +201,6 @@ class Asteroid:
             return json.load(json_file)
 
     def write_asteroid_json(self):
-
         filename = "{}.json".format(self.alias)
         filepath = pathlib.Path(self.path, filename)
 
@@ -218,7 +221,6 @@ class Asteroid:
         return filepath
 
     def calculate_bsp_start_period(self, start_period):
-
         years_behind = int(self.__BSP_YEARS_BEHIND)
         start_period = dt.strptime(str(start_period), "%Y-%m-%d")
         start = dt(year=start_period.year - years_behind, month=1, day=1)
@@ -226,7 +228,6 @@ class Asteroid:
         return start.strftime("%Y-%m-%d")
 
     def calculate_bsp_end_period(self, end_period):
-
         years_ahead = int(self.__BSP_YEARS_AHEAD)
         end_period = dt.strptime(str(end_period), "%Y-%m-%d")
         end = dt(year=end_period.year + years_ahead, month=12, day=31)
@@ -234,22 +235,21 @@ class Asteroid:
         return end.strftime("%Y-%m-%d")
 
     def get_bsp_filename(self):
-        return f'{self.alias}.bsp'
-
+        return f"{self.alias}.bsp"
 
     def download_jpl_bsp(self, end_period, force=False, start_period=None):
         """
-            Exemplo do retorno:
-                {
-                    'source': 'JPL', 
-                    'filename': '2010BJ35.bsp', 
-                    'size': 225280, 
-                    'start_period': '2012-01-01', 
-                    'end_period': '2024-12-31', 
-                    'dw_start': '2021-11-23T20:27:21.014818+00:00', 
-                    'dw_finish': '2021-11-23T20:27:23.887789+00:00', 
-                    'dw_time': 2.872971
-                }
+        Exemplo do retorno:
+            {
+                'source': 'JPL',
+                'filename': '2010BJ35.bsp',
+                'size': 225280,
+                'start_period': '2012-01-01',
+                'end_period': '2024-12-31',
+                'dw_start': '2021-11-23T20:27:21.014818+00:00',
+                'dw_finish': '2021-11-23T20:27:23.887789+00:00',
+                'dw_time': 2.872971
+            }
         """
         log = self.get_log()
         log.debug("Downloading BSP JPL started")
@@ -301,7 +301,6 @@ class Asteroid:
             return None
 
     def check_bsp_jpl(self, end_period, days_to_expire=None, start_period=None):
-
         log = self.get_log()
 
         tp0 = dt.now(tz=timezone.utc)
@@ -402,7 +401,6 @@ class Asteroid:
             self.write_asteroid_json()
 
     def check_orbital_elements(self, days_to_expire=None):
-
         log = self.get_log()
 
         tp0 = dt.now(tz=timezone.utc)
@@ -489,7 +487,6 @@ class Asteroid:
             self.write_asteroid_json()
 
     def check_observations(self, days_to_expire=None):
-
         log = self.get_log()
 
         tp0 = dt.now(tz=timezone.utc)
@@ -578,7 +575,6 @@ class Asteroid:
         return pathlib.Path.joinpath(pathlib.Path(self.path), filename)
 
     def retrieve_des_observations(self, force=False):
-
         log = self.get_log()
         log.info("Retriving DES Observations started")
 
@@ -641,7 +637,6 @@ class Asteroid:
             return None
 
     def check_des_observations(self, days_to_expire=90):
-
         log = self.get_log()
 
         tp0 = dt.now(tz=timezone.utc)
@@ -714,7 +709,6 @@ class Asteroid:
             self.write_asteroid_json()
 
     def remove_previus_results(self, remove_inputs=False):
-
         log = self.get_log()
         log.debug("Removing previous results.")
 
@@ -765,11 +759,13 @@ class Asteroid:
         log.info("Removed [%s] files in %s" % (len(removed_files), tdelta))
 
     def register_occultations(self, start_period: str, end_period: str):
-
         log = self.get_log()
 
         try:
             t0 = dt.now(tz=timezone.utc)
+
+            log.info("PATH: %s" % self.path)
+            log.info("PRED.OCUL: %s" % self.predict_occultation)
 
             predict_table_path = pathlib.Path(
                 self.path, self.predict_occultation["filename"]
@@ -883,13 +879,16 @@ class Asteroid:
                     "ra_target_deg",
                     "dec_target_deg",
                     "asteroid_id",
-                    "created_at"
+                    "created_at",
                 ]
             )
 
             data = StringIO()
             df.to_csv(
-                data, sep="|", header=True, index=False,
+                data,
+                sep="|",
+                header=True,
+                index=False,
             )
             data.seek(0)
 
@@ -912,7 +911,6 @@ class Asteroid:
             )
 
             return rowcount
-
         except Exception as e:
             msg = "Failed in Ingest Occultations stage. Error: %s" % e
 
@@ -926,11 +924,16 @@ class Asteroid:
             self.write_asteroid_json()
 
     def consiladate(self):
-
         log = self.get_log()
 
         a = dict(
-            {"ast_id": self.id, "name": self.name, "number": self.number, "base_dynclass": self.base_dynclass, "dynclass": self.dynclass}
+            {
+                "ast_id": self.id,
+                "name": self.name,
+                "number": self.number,
+                "base_dynclass": self.base_dynclass,
+                "dynclass": self.dynclass,
+            }
         )
 
         try:
@@ -947,7 +950,9 @@ class Asteroid:
                             "des_obs_start": self.des_observations["start"],
                             "des_obs_finish": self.des_observations["finish"],
                             "des_obs_exec_time": self.des_observations["exec_time"],
-                            "des_obs_gen_run": self.des_observations.get("generated_in_this_run", False),
+                            "des_obs_gen_run": self.des_observations.get(
+                                "generated_in_this_run", False
+                            ),
                             "des_obs_tp_start": self.des_observations["tp_start"],
                             "des_obs_tp_finish": self.des_observations["tp_finish"],
                         }
@@ -965,7 +970,9 @@ class Asteroid:
                             "bsp_jpl_start": self.bsp_jpl["dw_start"],
                             "bsp_jpl_finish": self.bsp_jpl["dw_finish"],
                             "bsp_jpl_dw_time": self.bsp_jpl["dw_time"],
-                            "bsp_jpl_dw_run": self.bsp_jpl.get("downloaded_in_this_run", False),
+                            "bsp_jpl_dw_run": self.bsp_jpl.get(
+                                "downloaded_in_this_run", False
+                            ),
                             "bsp_jpl_tp_start": self.bsp_jpl["tp_start"],
                             "bsp_jpl_tp_finish": self.bsp_jpl["tp_finish"],
                         }
@@ -984,7 +991,9 @@ class Asteroid:
                             "obs_start": self.observations["dw_start"],
                             "obs_finish": self.observations["dw_finish"],
                             "obs_dw_time": self.observations["dw_time"],
-                            "obs_dw_run": self.observations.get("downloaded_in_this_run", False),
+                            "obs_dw_run": self.observations.get(
+                                "downloaded_in_this_run", False
+                            ),
                             "obs_tp_start": self.observations["tp_start"],
                             "obs_tp_finish": self.observations["tp_finish"],
                         }
@@ -1003,7 +1012,9 @@ class Asteroid:
                             "orb_ele_start": self.orbital_elements["dw_start"],
                             "orb_ele_finish": self.orbital_elements["dw_finish"],
                             "orb_ele_dw_time": self.orbital_elements["dw_time"],
-                            "orb_ele_dw_run": self.orbital_elements.get("downloaded_in_this_run", False),
+                            "orb_ele_dw_run": self.orbital_elements.get(
+                                "downloaded_in_this_run", False
+                            ),
                             "orb_ele_tp_start": self.orbital_elements["tp_start"],
                             "orb_ele_tp_finish": self.orbital_elements["tp_finish"],
                         }
@@ -1065,7 +1076,7 @@ class Asteroid:
             if len(self.messages) > 0:
                 a["messages"] = ";".join(self.messages)
 
-            # Define o status baseado na execução da etapa de predição. 
+            # Define o status baseado na execução da etapa de predição.
             # Se o asteroid executou a predição é considerado sucesso, independente de ter gerado resultados.
             if self.predict_occultation is None:
                 a["status"] = 2
@@ -1086,7 +1097,6 @@ class Asteroid:
             return a
 
     def remove_outputs(self):
-
         log = self.get_log()
         # log.debug("Removing Outputs.")
 
@@ -1123,7 +1133,6 @@ class Asteroid:
         log.info("Removed [%s] files in %s" % (len(removed_files), tdelta))
 
     def retrieve_ccds(self, leap_second):
-
         log = self.get_log()
 
         # Limpa o cache de resultados anteriores, esta etapa
@@ -1139,20 +1148,21 @@ class Asteroid:
             ccds = dao.ccds_by_asteroid(self.name)
 
             for ccd in ccds:
-                
                 # Correção no path dos ccds, para ficar igual ao ambiente do linea
-                path = ccd["path"].replace('OPS/', '')
-                path = path.replace('/red/immask', '/cat')
-                filename = ccd["filename"].replace('immasked.fits', 'red-fullcat.fits')                
-                #print(str(ccd["date_obs"].astimezone(timezone.utc)))
+                path = ccd["path"].replace("OPS/", "")
+                path = path.replace("/red/immask", "/cat")
+                filename = ccd["filename"].replace("immasked.fits", "red-fullcat.fits")
+                # print(str(ccd["date_obs"].astimezone(timezone.utc)))
                 ccd.update(
                     {
                         "date_obs": str(ccd["date_obs"].astimezone(timezone.utc)),
                         "date_jd": date_to_jd(
-                            str(ccd["date_obs"].astimezone(timezone.utc)).strip(), ccd["exptime"], leap_second
+                            str(ccd["date_obs"].astimezone(timezone.utc)).strip(),
+                            ccd["exptime"],
+                            leap_second,
                         ),
                         "path": path,
-                        "filename": filename
+                        "filename": filename,
                     }
                 )
 
