@@ -1,0 +1,17 @@
+version: "3.6"
+services:
+  tno_pipeline:
+    user: "1000:1000"
+    build: .
+    command: /run_parsl.sh
+    # network_mode: "host"
+    volumes:
+      #  # Diretório de execução dos pipelines
+      #  - /lustre/t1/cl/ton/workflows/:/lustre/t1/cl/ton/workflows
+      - .:/app
+    #  # - /lustre/t1/cl/ton/workflows/.ssh/:/home/app.tno/.ssh
+    #environment:
+    #  - DB_URI=postgresql+psycopg2://untrustedprod:untrusted@desdb4.linea.gov.br:5432/prod_gavo
+    #  - USER=app.tno
+    #  # PARSL_ENV define onde será o processamento: local ou linea (Slurm)
+    #  - PARSL_ENV=linea
