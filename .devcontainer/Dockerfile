@@ -36,6 +36,5 @@ RUN pip install \
     spiceypy==5.0.1 \
     sqlalchemy==1.4.32 
 
-COPY --chmod=0775 ./entrypoint.sh /entrypoint.sh
-
-ENTRYPOINT [ "/entrypoint.sh" ]
+# COPY --chmod=0775 ./entrypoint.sh /entrypoint.sh
+# ENTRYPOINT [ "/entrypoint.sh" ]
