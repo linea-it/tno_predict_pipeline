@@ -778,7 +778,7 @@ class Asteroid:
         # log.debug("Removed Files: [%s]" % ", ".join(removed_files))
         log.info("Removed [%s] files in %s" % (len(removed_files), tdelta))
 
-    def register_occultations(self, start_period: str, end_period: str):
+    def register_occultations(self, start_period: str, end_period: str, jobid: int):
         log = self.get_log()
 
         if "filename" not in self.predict_occultation:
@@ -922,6 +922,28 @@ class Asteroid:
            
             # log.debug(df.columns.values.tolist())
 
+            # Adiciona algumas informacoes de Proveniencia a cada evento de predicao
+            # base_dynclass, dynclass, catalog, predict_step, bsp_source, obs_source, orb_ele_source, bsp_planetary, leap_seconds, nima , job_id  
+
+            df["base_dynclass"] = self.base_dynclass
+            df["dynclass"] = self.dynclass
+            
+            df["catalog"] = self.predict_occultation['catalog']
+            df["predict_step"] = self.predict_occultation['predict_step']
+            df["bsp_source"] = self.bsp_jpl['source']
+            df["obs_source"] = self.observations['source']
+            df["orb_ele_source"] = self.orbital_elements['source']
+            df["bsp_planetary"] = self.predict_occultation['bsp_planetary']
+            df["leap_seconds"] = self.predict_occultation['leap_seconds']
+            df["nima"] = self.predict_occultation['nima']
+            df["job_id"] = jobid
+            
+            # Correcao de valores nao validos
+            # Fix https://github.com/linea-it/tno_pipelines/issues/10.
+            df.loc[df['j'] == 50, 'j'] = None
+            df.loc[df['h'] == 50, 'h'] = None
+            df.loc[df['k'] == 50, 'k'] = None
+
             # Altera a ordem das colunas para coincidir com a da tabela
             df = df.reindex(
                 columns=[
@@ -963,9 +985,23 @@ class Asteroid:
                     "occ_path_coeff",
                     "occ_path_is_nightside",
                     "occ_path_max_latitude",
-                    "occ_path_min_latitude"  
+                    "occ_path_min_latitude",
+                    "base_dynclass", 
+                    "dynclass", 
+                    "catalog", 
+                    "predict_step", 
+                    "bsp_source", 
+                    "obs_source",
+                    "orb_ele_source", 
+                    "bsp_planetary", 
+                    "leap_seconds", 
+                    "nima", 
+                    "job_id",  
                 ]
             )
+
+            # ATENCAO! Sobrescreve o arquivo occultation_table.csv
+            df.to_csv(predict_table_path, index=False, sep=";")
 
             data = StringIO()
             df.to_csv(

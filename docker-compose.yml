@@ -4,8 +4,8 @@ services:
     # user: "31670:15010"
     &pipeline
     build: .
-    command: /daemon.sh
-    # command: sleep infinity
+    # command: /daemon.sh
+    command: sleep infinity
     network_mode: "host"
     volumes:
       # Diretório de execução dos pipelines
@@ -14,7 +14,7 @@ services:
       - ./log:/log
       # - /lustre/t1/cl/ton/workflows/.ssh/:/home/app.tno/.ssh
     environment:
-      - DB_URI=postgresql+psycopg2://untrustedprod:untrusted@desdb4.linea.gov.br:5432/prod_gavo
+      # - DB_URI=postgresql+psycopg2://untrustedprod:untrusted@desdb4.linea.gov.br:5432/prod_gavo
       - USER=app.tno
       # PARSL_ENV define onde será o processamento: local ou linea (Slurm)
       - PARSL_ENV=local

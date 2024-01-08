@@ -269,7 +269,7 @@ class OccultationDao(Dao):
     def import_occultations(self, data):
 
         # Sql Copy com todas as colunas que vão ser importadas e o formato do csv.
-        sql = "COPY %s (name, number, date_time, ra_star_candidate, dec_star_candidate, ra_target, dec_target, closest_approach, position_angle, velocity, delta, g, j, h, k, long, loc_t, off_ra, off_dec, proper_motion, ct, multiplicity_flag, e_ra, e_dec, pmra, pmdec, ra_star_deg, dec_star_deg, ra_target_deg, dec_target_deg, asteroid_id, created_at, have_path_coeff, occ_path_max_longitude, occ_path_min_longitude, occ_path_coeff, occ_path_is_nightside, occ_path_max_latitude, occ_path_min_latitude  ) FROM STDIN with (FORMAT CSV, DELIMITER '|', HEADER);" % self.tbl
+        sql = "COPY %s (name, number, date_time, ra_star_candidate, dec_star_candidate, ra_target, dec_target, closest_approach, position_angle, velocity, delta, g, j, h, k, long, loc_t, off_ra, off_dec, proper_motion, ct, multiplicity_flag, e_ra, e_dec, pmra, pmdec, ra_star_deg, dec_star_deg, ra_target_deg, dec_target_deg, asteroid_id, created_at, have_path_coeff, occ_path_max_longitude, occ_path_min_longitude, occ_path_coeff, occ_path_is_nightside, occ_path_max_latitude, occ_path_min_latitude, base_dynclass, dynclass, catalog, predict_step, bsp_source, obs_source, orb_ele_source, bsp_planetary, leap_seconds, nima , job_id) FROM STDIN with (FORMAT CSV, DELIMITER '|', HEADER);" % self.tbl
 
         rowcount = self.import_with_copy_expert(sql, data)
 

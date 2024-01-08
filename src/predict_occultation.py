@@ -856,7 +856,7 @@ def submit_tasks(jobid: int):
                         end_date = str(PREDICT_END.date())
 
                         ingested_occ_count = ast_obj.register_occultations(
-                            start_date, end_date
+                            start_date, end_date, jobid
                         )
 
                         update_progress_status(

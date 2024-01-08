@@ -77,7 +77,12 @@ class Dao():
 
 
 class GaiaDao(Dao):
+    # Para alterar o catalogo GAIA para DR3 por exemplo criar uma nova classe igual a essa
+    # e alterar os atributos do catalogo.
+    # e na hora de usar criar um parametro para escolher qual classe instanciar.
     def __init__(self):
+        self.catalog_name = "GAIA DR2"
+
         self.catalog = dict({
             "schema": "gaia",
             "tablename": "dr2",
@@ -93,6 +98,7 @@ class GaiaDao(Dao):
 
         # Quantas posições por query.
         self.POSITION_GROUP = 5
+
 
     def chunks_positions(self, l, n):
         n = max(1, n)
