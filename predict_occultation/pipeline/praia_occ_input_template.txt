@@ -1,0 +1,17 @@
+{stellar_catalog}| input  file : final xy catalog with all stars from global reduction
+{object_ephemeris}| input  file : ephemeris of occulting body
+1                                                 | ephemeris format: 1 - NAIF ; 2 - Horizons general format; 3 -  Horizons Pluto and satellites format
+DE435/JPL                                         | Ephemeris label
+{stars_catalog_mini}| output file : mini-catalog with only (RA,DEC)s of all stars from the input catalog
+{stars_catalog_xy}| output file : candidate stars xy catalog
+{stars_parameters_of_occultation}| output file : star parameters of occultation (minimum geocentric distance,t_occ,t_initial,t_final, etc)
+{stars_parameters_of_occultation_plot}| output file : star parameters of occultation (Bruno Sicardy data plot format)
+00.9000                                           | radius (arcsec) of projected search circle (~ projected Earth figure + occultation body)
+01.0000                                           | minimum outreach radius (arcsec) for fast elimination of farway ephemeris points
+12d0  12d0                                        | exclusion range of Local Solar Time (day light): min max (hours)
+2005                                              | to (years - see below)
++00.00000d0                                       | bofra
++0.00000d0                                        | aofra	 Linear (RA,DEC) ephemeris drift: offra = aofra * t + bofra
++00.0000d0                                        | bofde					  offde = aofde * t + bofde
++0.00000d0                                        | aofde					  offra, offde in (mas), t in years
+***********************************************************************************************************************************************************

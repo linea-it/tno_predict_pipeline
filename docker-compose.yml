@@ -1,0 +1,22 @@
+version: "3.6"
+services:
+  tno_pipeline:
+    # user: "31670:15010"
+    &pipeline
+    build: .
+    command: /daemon.sh
+    # command: sleep infinity
+    network_mode: "host"
+    volumes:
+      # Diretório de execução dos pipelines
+      - .:/app
+      # Diretório de Logs
+      - ./log:/log
+      # - /lustre/t1/cl/ton/workflows/.ssh/:/home/app.tno/.ssh
+    environment:
+      - DB_URI=postgresql+psycopg2://untrustedprod:untrusted@desdb4.linea.gov.br:5432/prod_gavo
+      - USER=app.tno
+      # PARSL_ENV define onde será o processamento: local ou linea (Slurm)
+      - PARSL_ENV=local
+      # - SLURM_REMOTE_DIR=/lustre/t1/cl/ton/workflows/ # somente se o processamento for no slurm
+      # - SSHKEY=/lustre/t1/cl/ton/workflows/.ssh/id_rsa # # somente se o processamento precisar de conexão ssh

@@ -1,0 +1,48 @@
+/lustre/t1/cl/ton/workflows/aux/NIMAv7/NIMAv7_user                | NIMAv7 user path 
+{dir_data}| Folder path where text files are stored
+{dir_data}| Folder path where bsp files are stored
+{dir_data}| Path of observation files (AstDyS/MPC)
+{dir_data}| Path of orbital parameters files (AstDyS/MPC)
+{number}| Asteroid number or name if unnumbered (ex: 50000, 2007_JH43)
+{name}| Asteroid name (ex: Quaoar, 2007_JH43)
+0                                                                 | file to merge (0 for all files)
+30                                                                | Timing threshold in sec for doublons (default: 60s)
+2                                                                 | Type of merging (2: No merging, weight changed (default, v3)) 
+1                                                                 | Planets perturbations (1: Me,V,EMB,Ma,J,S,U,N (default)) for sc_fit
+1                                                                 | Fitting process (0: O-C computation only; 1: Fitting (default))
+2                                                                 | Weighting process (0: computed rms; 1: constant rms; 2: rms astdys (default)) for sc_fit
+1                                                                 | Bias correction (0:no; 1:yes (default)) for sc_fit
+6                                                                 | Maximum number of fitting steps  (default:6)
+1                                                                 | Rejection of outliers (0: threshold values; 1: flag astdys (default); 2: Khi2 rejection)
+0                                                                 | Plot of residuals (O-C) (0 = no (default); 1 = png file)
+0                                                                 | Center of ephemeris in JPL (0: SSB -default-, 1: Sun)
+1                                                                 | Planets perturbations (1: Me,V,EMB,Ma,J,S,U,N (default)) for sc_diffjplomc
+2                                                                 | Weighting process (0: computed rms; 1: constant rms; 2: rms astdys (default)) for sc_diffjplomc
+1                                                                 | Bias correction (0:no; 1:yes (default)) for sc_diffjplomc
+6                                                                 | Maximum number of fitting steps  (default:6)
+1                                                                 | Rejection of outliers (0: threshold values; 1: flag astdys (default); 2: Khi2 rejection)
+1                                                                 | Plot of residuals (O-C) (0 = no (default); 1 = yes)
+0                                                                 | Format of plots (0 = png (default); 1 = pdf file)
+4                                                                 | Difference with JPL Ephemeris. Step between each position (default: 4)
+d                                                                 | Unit  (d/j : day; h: hour; m: min, s: sec) (default: d)
+2                                                                 | Date format (0: julian date; 1: year; 2: yyyy-mm-dd@hh:mm:ss (default))
+2013-01-01                                                        | Ephemeris. Date of beginning  (default:2013-01-01)
+{plot_end}| Date of end  (default:2019-01-01)
+                                                                  | Scale for plot (R.A. and Dec. range). min R.A. in mas (default : automatic)
+1                                                                 | Planets perturbations (1: Me,V,EMB,Ma,J,S,U,N (default)) for sc_makebsp
+60                                                                | Computation of Chebychev polynomia. Length of each intervals (default:60days)
+20                                                                | Polynomia degree (default:20)
+2                                                                 | Date format (0: julian date; 1: year; 2: yyyy-mm-dd@hh:mm:ss (default))
+2010-01-01                                                        | Period of validity. Date of beginning  (default:2010-01-01)
+{bsp_end}| Date of end  (default:2020-01-09)
+1                                                                 | Comparison between bsp and numerical integration  (0:No;1:Yes(default))
+1                                                                 | Source of ephemeris. (0: Numerical integration (possible uncert.); 1: bsp (default); 2: bsp/JPL)
+0                                                                 | Time scale (0: TT (default); 1: UTC) 
+1                                                                 | Type of date (0: Julian date; 1: Gregorian date (default))
+0                                                                 | Type of ephemeris (0: astrometric (with light corr.)(default); 1: geometric (without light corr.))
+500                                                               | Observatory code IAU (default:500)
+1                                                                 | Positions. Step between each position (default:1)
+d                                                                 | Unit of step (d: day (default); h: hour; m: minute; s: second)
+2                                                                 | Date format (0: julian date; 1: year; 2: yyyy-mm-dd@hh:mm:ss (default))
+2018-01-01                                                        | Period of validity. Date of beginning  (default:2018-01-01)
+{ephem_end}| Date of end  (default:2019-01-01)

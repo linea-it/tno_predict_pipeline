@@ -276,7 +276,13 @@ TODO: Texto explicando como o pipeline funciona.
 - Ter acesso ao banco de dados do portal tno neste momento só está disponivel a instancia de testing executando na srvnode03:5454.
 
 
-### Como executar o pipeline manualmente.
+### Como executar o pipeline localmente usando o DB de teste
 
-No momento só é possivel executar o pipeline manualmente, estes são os passos necessários: 
+Defina a variavel `PARSL_ENV` como `local` e a conexão com o database é somente via tunnel ssh:
+
+```bash 
+ssh -f <user>@login.linea.org.br -L 3307:desdb4.linea.org.br:5432 -N
+```
+
+E também devemos alterar o `host` e a `port` na string do database e no `config.ini` apontando para `localhost` e `3307` respectivamente. 
 
