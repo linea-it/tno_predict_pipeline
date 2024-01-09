@@ -13,7 +13,5 @@ fi
 
 conda activate py2
 
-# export DB_URI=postgresql+psycopg2://untrustedprod:untrusted@localhost:3307/prod_gavo
-
 ulimit -s 100000
 ulimit -u 100000

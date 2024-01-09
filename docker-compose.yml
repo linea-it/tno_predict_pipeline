@@ -15,6 +15,9 @@ services:
       # - /lustre/t1/cl/ton/workflows/.ssh/:/home/app.tno/.ssh
     environment:
       # - DB_URI=postgresql+psycopg2://untrustedprod:untrusted@desdb4.linea.gov.br:5432/prod_gavo
+      # - DB_URI_ADMIN=postgresql+psycopg2://tnouseradmindev:TnoDev405060@desdb4.linea.gov.br:5432/tnodbdev
+      - DB_URI=postgresql+psycopg2://untrustedprod:untrusted@localhost:3307/prod_gavo
+      - DB_URI_ADMIN=postgresql+psycopg2://tnouseradmindev:TnoDev405060@localhost:3307/tnodbdev
       - USER=app.tno
       # PARSL_ENV define onde será o processamento: local ou linea (Slurm)
       - PARSL_ENV=local

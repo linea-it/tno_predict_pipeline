@@ -10,8 +10,6 @@ TMPDIR=`echo $RANDOM | md5sum | head -c 5; echo;`
 export DIR_DATA=/tmp/$TMPDIR
 echo 'DIR_DATA: '$DIR_DATA
 
-# export PIPELINE_PATH=/lustre/t1/tmp/singulani/tno/pipelines/predict_occultation/pipeline
-
 export APP_PATH_ORI=$PIPELINE_PATH
 export APP_PATH=$_path/run-$TMPDIR
 export PATH=$PATH:$APP_PATH_ORI/bin
