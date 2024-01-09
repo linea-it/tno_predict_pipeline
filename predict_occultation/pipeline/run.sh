@@ -5,6 +5,9 @@ _start=$2
 _end=$3
 _number=$4
 _path=$5
+_step=$6
+_leap_sec=$7
+_bsp_planetary=$8
 
 TMPDIR=`echo $RANDOM | md5sum | head -c 5; echo;`
 export DIR_DATA=/tmp/$TMPDIR
@@ -30,7 +33,14 @@ shift $#
 
 source $PIPELINE_PATH/env_pipeline.sh
 
-python run.py $_name $_start $_end --number $_number --path $_path
+# run.sh <name> <start_date> <final_date> \
+#   --number <number> 
+#   --path <path>
+#   --step <step> 
+#   --leap_sec <leap_sec> 
+#   --bsp_planetary <bsp_planetary>
+#   --refina_orbit OPCIONAL
+python run.py $_name $_start $_end --number $_number --path $_path --step $_step --leap_sec $_leap_sec --bsp_planetary $_bsp_planetary
 
 rm $DIR_DATA
 

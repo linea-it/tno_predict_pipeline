@@ -1,7 +1,7 @@
 #!/usr/bin/python2.7
 # -*- coding: utf-8 -*-
 import os
-
+import numpy as np
 
 def check_leapsec(filename):
     """
@@ -219,3 +219,28 @@ def create_nima_input(name, number, period_end):
             new_file.write(data)
 
         return nima_input_file
+
+def ast_visual_mag_from_astdys(file_path):
+    """
+    Calculate the maximum visual magnitude from an AstDys .rwo file.
+
+    This function reads data from an .rwo file provided by AstDys (Asteroids - Dynamic Site)
+    and computes the maximum visual magnitude of an asteroid.
+
+    Parameters:
+        file_path (str): The path to the .rwo file. It is crucial that this file is in the
+            .rwo format and comes from AstDys, as the function relies on the
+            specific structure of these files.
+
+    Returns:
+        float or None: The maximum visual magnitude found in the file. If the maximum value cannot
+            be calculated (including if the file does not exist or cannot be processed),
+            the function returns None.
+    """
+
+    try:
+        data = np.genfromtxt(file_path, dtype="U16,f8,U16", delimiter=[156,5,36], names=['_0', 'mag', '_1'], skip_header=7)
+        max_mag = np.nanmax(data['mag'])
+        return None if np.isnan(max_mag) else float(max_mag)
+    except:
+        return None
