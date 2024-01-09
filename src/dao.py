@@ -8,9 +8,29 @@ import warnings
 from sqlalchemy import exc as sa_exc
 from datetime import datetime, timezone, timedelta
 
+
+class MissingDBURIException(Exception):
+    pass
+
+
 class Dao():
 
     con = None
+
+    def get_db_uri(self):
+
+        # DB_USER, DB_PASS, DB_HOST, DB_PORT, DB_NAME
+        # db_uri = "postgresql+psycopg2://%s:%s@%s:%s/%s" % (
+        #     "postgres", "postgres", "172.18.0.2", "5432", "tno_v2")
+
+        # DB_URI=postgresql+psycopg2://USER:PASS@HOST:PORT/DB_NAME
+        try:
+            db_uri = os.environ['DB_URI_ADMIN']
+            return db_uri
+        except:
+            raise MissingDBURIException(
+                "Required environment variable with URI to access the database."
+                "example DB_URI_ADMIN=postgresql+psycopg2://USER:PASS@HOST:PORT/DB_NAME")
 
     def get_db_engine(self):
         # Carrega as variaveis de configuração do arquivo config.ini
@@ -18,13 +38,7 @@ class Dao():
         config.read(os.path.join(os.environ['EXECUTION_PATH'], 'config.ini'))
 
         engine = create_engine(
-            'postgresql+psycopg2://%s:%s@%s:%s/%s' % (
-                config['AdmDatabase']['DbUser'],
-                config['AdmDatabase']['DbPass'],
-                config['AdmDatabase']['DbHost'],
-                config['AdmDatabase']['DbPort'],
-                config['AdmDatabase']['DbName']
-            ),
+            self.get_db_uri(),
             poolclass=NullPool
         )
 

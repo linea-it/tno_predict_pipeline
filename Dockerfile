@@ -140,8 +140,11 @@ ARG USERGID=1000
 # Create the conda group and add remote user to the group
 RUN groupadd --gid 1000 ${USERNAME} \
     && useradd --uid ${USERUID} --gid ${USERGID} --shell /bin/bash --create-home ${USERNAME} \
+    && groupadd --gid 15010 ton \
+    && useradd --uid 31670 --gid 15010 --shell /bin/bash --create-home app.tno \
     && groupadd -r conda --gid 900 \ 
-    && usermod -aG conda ${USERNAME}
+    && usermod -aG conda ${USERNAME} \
+    && usermod -aG conda app.tno
 #   && echo dev-user ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/dev-user \
 #   && chmod 0440 /etc/sudoers.d/dev-user
 
@@ -170,21 +173,23 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
 
 ARG APP_HOME=/app
 WORKDIR ${APP_HOME}
+COPY . $APP_HOME
 
-# # Download da BSP planetary
-# # OBS. o Download demora bastante!
-# RUN wget --no-verbose --show-progress \
-# 	--progress=bar:force:noscroll \ 
-# 	https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de440.bsp	
+# Download da BSP planetary
+# OBS. o Download demora bastante!
+RUN wget --no-verbose --show-progress \
+    --progress=bar:force:noscroll \ 
+    https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de440.bsp \
+    && mv de440.bsp /app/predict_occultation/pipeline/de440.bsp 
 
 # Download Leap Second
 RUN wget --no-verbose --show-progress \
     --progress=bar:force:noscroll \
     https://naif.jpl.nasa.gov/pub/naif/generic_kernels/lsk/naif0012.tls \ 
-    && chown ${USERUID}:${USERGID} naif0012.tls
+    && mv naif0012.tls /app/predict_occultation/pipeline/naif0012.tls
 
 USER ${USERNAME}
 
 RUN /bin/bash --login -c "conda init bash \
-    && echo 'conda activate py3' >> ~/.bashrc \
-    && source ~/.bashrc"
+    && echo 'conda activate py3' >> /app/src/env.sh \
+    && source /app/src/env.sh"
