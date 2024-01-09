@@ -26,6 +26,7 @@ def get_config(key):
         "linea": HighThroughputExecutor(
             label="linea",
             max_workers=100,  # number of cores per node
+            worker_logdir_root=f'{"/".join([slurm_dir, "script_dir"])}',
             provider=SlurmProvider(
                 partition="cpu",
                 nodes_per_block=1,  # number of nodes
