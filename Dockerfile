@@ -195,6 +195,9 @@ COPY --chown=${USERNAME}:ton --chmod=775 rerun.sh ${APP_HOME}
 COPY --chown=${USERNAME}:ton --chmod=775 daemon.sh ${APP_HOME}
 COPY --chown=${USERNAME}:ton --chmod=775 run_daemon.py ${APP_HOME}
 
+RUN chmod =2775 ${PIPELINE_ROOT}
+RUN chmod =2775 ${APP_HOME}
+
 RUN mv de440.bsp ${PIPELINE_PATH}/de440.bsp \
     && mv naif0012.tls ${PIPELINE_PATH}/naif0012.tls
 
@@ -203,9 +206,14 @@ RUN rm -rf ${PIPELINE_ROOT}/external_inputs/*.pyc ${PIPELINE_ROOT}/external_inpu
 RUN rm -rf ${PIPELINE_PATH}/*.pyc ${PIPELINE_PATH}/__pycache__
 RUN rm -rf ${PIPELINE_PREDICT_OCC}/*.pyc ${PIPELINE_PREDIC_OCC}/__pycache__
 
-USER ${USERNAME}
 WORKDIR ${APP_HOME}
 
+USER apptno
+RUN /bin/bash --login -c "conda init bash \
+    && echo 'conda activate py3' >> ~/.bashrc \
+    && source ~/.bashrc"
+
+USER ${USERNAME}
 RUN /bin/bash --login -c "conda init bash \
     && echo 'conda activate py3' >> ~/.bashrc \
     && source ~/.bashrc"

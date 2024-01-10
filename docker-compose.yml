@@ -1,29 +1,28 @@
 version: "3.6"
 services:
   tno_pipeline:
-    # user: "31670:15010"
+    #user: "31670:15010"
+    #group_add:
+    #  - "900"
     &pipeline
     build: .
-    # command: /daemon.sh
-    command: sleep infinity
+    command: /app/daemon.sh
+    # command: sleep infinity # para testes
     network_mode: "host"
     volumes:
-      # Diretório de execução dos pipelines
-      - ./outputs:/app/outputs
-    #  - .:/app
-    # Diretório de Logs
-    # - ./log:/log
-    # - /lustre/t1/cl/ton/workflows/.ssh/:/home/app.tno/.ssh
+      - ./outputs:/app/outputs # Diretório de execução dos pipelines
+    #  - .:/app # montagem para desenvolvimento
+    #  - /lustre/t1/cl/ton/workflows/.ssh/:/home/app.tno/.ssh # montagem ssh para processamento no cluster
+    #  - /lustre/t1/scratch/users/app.tno/configs/:/lustre/t1/scratch/users/app.tno/configs # configurações remota
     environment:
       # - DB_URI=postgresql+psycopg2://untrustedprod:untrusted@desdb4.linea.gov.br:5432/prod_gavo
       # - DB_URI_ADMIN=postgresql+psycopg2://tnouseradmindev:TnoDev405060@desdb4.linea.gov.br:5432/tnodbdev
       - DB_URI=postgresql+psycopg2://untrustedprod:untrusted@localhost:3307/prod_gavo
       - DB_URI_ADMIN=postgresql+psycopg2://tnouseradmindev:TnoDev405060@localhost:3307/tnodbdev
-      - PREDICT_OUTPUTS=/app/outputs/predict_occultation
-      - USER=app.tno
-      # PARSL_ENV define onde será o processamento: local ou linea (Slurm)
-      - PARSL_ENV=local
-      - PREFIX_ENV=dev # local, testing or production
+      - PREDICT_OUTPUTS=/app/outputs/predict_occultation # outputs dir
+      - USER=apptno
+      - PARSL_ENV=local # PARSL_ENV define onde será o processamento: local ou linea (Slurm)
+      - PREFIX_ENV=local # local, testing or production
       # Para o cluster devemos alterar as variaveis de ambiente:
       # - SLURM_REMOTE_DIR=/lustre/t1/cl/ton/workflows/ # somente se o processamento for no slurm
       # - SSHKEY=/lustre/t1/cl/ton/workflows/.ssh/id_rsa # # somente se o processamento precisar de conexão ssh
