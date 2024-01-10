@@ -9,7 +9,7 @@ import argparse
 from datetime import datetime, timedelta
 from run_nima import start_nima
 from run_praia_occ import start_praia_occ
-from library import read_asteroid_json, write_asteroid_json, count_lines, create_nima_input
+from library import read_asteroid_json, write_asteroid_json, count_lines, create_nima_input, ast_visual_mag_from_astdys
 from dao import GaiaDao
 
 parser = argparse.ArgumentParser()
@@ -172,10 +172,22 @@ if __name__ == "__main__":
         # ============== Executar o PRAIA OCC ==============
         praia_t0 = datetime.now()
 
+        # Calcular a magnitude maxima do objeto apartir do arquivo Observations AstDys
+        MAXIMUM_VMAG_DEFAULT = 17
+
+        in_observations = os.path.join(data_dir, name + ".rwo")
+        ast_vmag = ast_visual_mag_from_astdys(in_observations)
+        print("Asteroid Visual Magnitude: [%s]" % ast_vmag)
+
+        maximum_visual_magnitude = MAXIMUM_VMAG_DEFAULT
+        if ast_vmag != None and ast_vmag < MAXIMUM_VMAG_DEFAULT:
+            maximum_visual_magnitude = ast_vmag
+        print("Maximum Visual Magnitude: [%s]" % maximum_visual_magnitude)
+
         print("Running PRAIA OCC")
         occultation_file = start_praia_occ(
             name, str(start_date), str(final_date), step,
-            leap_sec_filename, bsp_planetary_filename, bsp_object_filename
+            leap_sec_filename, bsp_planetary_filename, bsp_object_filename, maximum_visual_magnitude
         )
 
         praia_t1 = datetime.now()
@@ -189,6 +201,10 @@ if __name__ == "__main__":
             # Subtrai 1 por que o arquivo mesmo vazio tem os Headers
             count = count_lines(occultation_file) - 1
 
+            # Quantidade de estrelas analisadas.
+            gaia_catalog_csv = os.path.join(data_dir, "gaia_catalog.csv")
+            count_stars = count_lines(gaia_catalog_csv) - 1
+
             praia_result = dict({
                 "filename": os.path.basename(occultation_file),
                 "size": os.path.getsize(occultation_file),
@@ -199,10 +215,13 @@ if __name__ == "__main__":
                 "finish": praia_t1.isoformat(),
                 "exec_time": praia_td.total_seconds(),
                 "catalog": GAIA_NAME,
-                "predict_step": step,
+                "predict_step": int(step),
                 "bsp_planetary": bsp_planetary_filename.split('.')[0],
                 "leap_seconds": leap_sec_filename.split('.')[0],
-                "nima": USED_NIMA_BSP
+                "nima": USED_NIMA_BSP,
+                "asteroid_visual_magnitude": ast_vmag,
+                "maximum_visual_magnitude": maximum_visual_magnitude,
+                "stars": count_stars
             })
 
         else:

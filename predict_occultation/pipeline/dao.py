@@ -111,7 +111,13 @@ class GaiaDao(Dao):
 
         return clause
 
-    def catalog_by_positions(self, positions, radius=0.15):
+    def mag_max_clause(self, mag_max):
+
+        clause = 'phot_g_mean_mag <= %f' % (mag_max)
+
+        return clause
+
+    def catalog_by_positions(self, positions, radius=0.15, max_mag=None):
 
         try:
 
@@ -123,32 +129,10 @@ class GaiaDao(Dao):
 
             columns = ", ".join(self.gaia_properties)
 
-            # results = []
-
-            # # Agrupar clausulas em grupos para diminuir a quantidade de querys
-            # for gpos in dao.chunks_positions(positions, self.POSITION_GROUP):
-
-            #     clauses = list()
-
-            #     for pos in gpos:
-            #         clauses.append(self.q3c_clause(pos[0], pos[1], radius))
-
-            #     where = " OR ".join(clauses)
-            #     stm = """SELECT %s FROM %s WHERE %s """ % (
-            #         columns, tablename, where)
-
-            #     print(stm)
-
-            #     rows = self.fetch_all_dict(text(stm))
-            #     results += rows
-
-            #     del rows
-            #     del clauses
-
-            # return results
-
             df_results = None
 
+            print("GAIA Querys:")
+            print("-----------------------------------")            
             # Agrupar clausulas em grupos para diminuir a quantidade de querys
             for gpos in self.chunks_positions(positions, self.POSITION_GROUP):
 
@@ -158,9 +142,14 @@ class GaiaDao(Dao):
                     clauses.append(self.q3c_clause(pos[0], pos[1], radius))
 
                 where = " OR ".join(clauses)
+        
+                if max_mag:
+                    where = ("%s AND (%s)" % (self.mag_max_clause(max_mag), where)) 
+
                 stm = """SELECT %s FROM %s WHERE %s """ % (
                     columns, tablename, where)
 
+                print(text(stm))
                 df_rows = pd.read_sql(text(stm), con=self.get_db_engine())
 
                 if df_results is None:
@@ -173,6 +162,7 @@ class GaiaDao(Dao):
 
                 del df_rows
                 del clauses
+            print("-----------------------------------")                            
 
             if df_results.shape[0] >= 2100000:
                 pass

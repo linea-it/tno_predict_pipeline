@@ -569,6 +569,9 @@ def submit_tasks(jobid: int):
         PREDICT_STEP = int(job.get("predict_step", 600))
         log.info("Predict Step: [%s]" % PREDICT_STEP)
 
+        LEAP_SECOND = job["leap_seconds"]["filename"]
+        BSP_PLANETARY = job["bsp_planetary"]["filename"]
+
         job.update(
             {
                 "predict_start_date": str(PREDICT_START.date()),
@@ -771,7 +774,7 @@ def submit_tasks(jobid: int):
 
             try:
                 proc = run_pipeline(
-                    (name, start_date, end_date, number, path, workdir),
+                    (workdir, name, start_date, end_date, number, path, PREDICT_STEP, LEAP_SECOND, BSP_PLANETARY),
                     stderr=f"{path}/{name}.err",
                     stdout=f"{path}/{name}.out",
                 )

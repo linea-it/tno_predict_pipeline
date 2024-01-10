@@ -32,7 +32,7 @@ parser.add_argument("-p", "--path", default=None,
 def start_praia_occ(
         name, start_date, final_date, step,
         leap_sec_filename, bsp_planetary_filename,
-        bsp_object_filename):
+        bsp_object_filename, max_mag):
 
     log_file = os.path.join(os.environ.get("DIR_DATA"), "praia_occ.log")
 
@@ -123,8 +123,11 @@ def start_praia_occ(
         centers_file, centers_deg_filename)
 
     # Para cada posição executa a query no banco de dados.
+    print("Maximum Visual Magnitude: [%s]" % max_mag)
+
     dao = GaiaDao()
-    df_catalog = dao.catalog_by_positions(center_positions, radius=0.15)
+    df_catalog = dao.catalog_by_positions(center_positions, radius=0.15, max_mag=max_mag)
+    print("Stars: [%s]" % df_catalog.shape[0])
     # Cria um arquivo no formato especifico do praia_occ
     gaia_cat = dao.write_gaia_catalog(
         df_catalog.to_dict('records'),

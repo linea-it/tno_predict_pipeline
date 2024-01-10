@@ -4,6 +4,14 @@
 
 # The _xy2latlon function is based on the function xy2latlon from the SORA v0.3.1 lib
 
+# import astropy.config.paths
+# print("--------------------------------")
+# print(astropy.config.paths.get_cache_dir())
+# print("--------------------------------")
+# from astropy.config import set_temp_cache
+# set_temp_cache('/app/shared/cache')
+
+import os
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
