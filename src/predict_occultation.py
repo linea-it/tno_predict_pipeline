@@ -190,13 +190,14 @@ def get_job_path(jobid):
     """Retorna o path para o diretorio do job, cria o diretorio caso nao exista.
     """
     config = get_configs()
-    orbit_trace_root = config["DEFAULT"].get("PredictOccultationJobPath")
-
+    # orbit_trace_root = config["DEFAULT"].get("PredictOccultationJobPath")
+    orbit_trace_root = os.getenv('PREDICT_OUTPUTS', '/predict_occultation')
     folder_name = f"{jobid}"
     # folder_name = f"teste_{job['id']}"
     # folder_name = f"{job['id']}-{str(uuid.uuid4())[:8]}"
 
-    job_path = pathlib.Path(orbit_trace_root).joinpath(folder_name)
+    prefix_env = os.getenv('PREFIX_ENV', 'dev')
+    job_path = pathlib.Path(orbit_trace_root).joinpath(prefix_env, folder_name)
 
     if not job_path.exists():
         job_path.mkdir(parents=True, mode=0o775)

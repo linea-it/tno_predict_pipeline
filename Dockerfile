@@ -1,4 +1,3 @@
-# FROM continuumio/anaconda3 as base
 FROM ubuntu:20.04 as base
 
 # Instalação do Anaconda seguindo a imagem oficial
@@ -132,21 +131,16 @@ RUN /bin/bash --login -c "conda init bash \
 # -------------- Runtime Stage -------------- 
 FROM base
 
-ARG USERNAME=vscode
-ARG USERUID=1000
-ARG USERGID=1000
+# Download da BSP planetary
+# OBS. o Download demora bastante!
+RUN wget --no-verbose --show-progress \
+    --progress=bar:force:noscroll \ 
+    https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de440.bsp 
 
-# Create remote user 
-# Create the conda group and add remote user to the group
-RUN groupadd --gid 1000 ${USERNAME} \
-    && useradd --uid ${USERUID} --gid ${USERGID} --shell /bin/bash --create-home ${USERNAME} \
-    && groupadd --gid 15010 ton \
-    && useradd --uid 31670 --gid 15010 --shell /bin/bash --create-home app.tno \
-    && groupadd -r conda --gid 900 \ 
-    && usermod -aG conda ${USERNAME} \
-    && usermod -aG conda app.tno
-#   && echo dev-user ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/dev-user \
-#   && chmod 0440 /etc/sudoers.d/dev-user
+# Download Leap Second
+RUN wget --no-verbose --show-progress \
+    --progress=bar:force:noscroll \
+    https://naif.jpl.nasa.gov/pub/naif/generic_kernels/lsk/naif0012.tls 
 
 # PRAIA OCC binaries
 COPY --from=praia_occ /tmp/praia_occ/* /usr/local/bin
@@ -172,24 +166,46 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     wget
 
 ARG APP_HOME=/app
-WORKDIR ${APP_HOME}
-COPY . $APP_HOME
 
-# Download da BSP planetary
-# OBS. o Download demora bastante!
-RUN wget --no-verbose --show-progress \
-    --progress=bar:force:noscroll \ 
-    https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de440.bsp \
-    && mv de440.bsp /app/predict_occultation/pipeline/de440.bsp 
+ARG USERNAME=vscode
+ARG USERUID=1000
+ARG USERGID=1000
 
-# Download Leap Second
-RUN wget --no-verbose --show-progress \
-    --progress=bar:force:noscroll \
-    https://naif.jpl.nasa.gov/pub/naif/generic_kernels/lsk/naif0012.tls \ 
-    && mv naif0012.tls /app/predict_occultation/pipeline/naif0012.tls
+# Create remote user 
+# Create the conda group and add remote user to the group
+RUN groupadd --gid ${USERGID} ${USERNAME} \
+    && useradd --uid ${USERUID} --gid ${USERGID} --shell /bin/bash --create-home ${USERNAME} \
+    && groupadd --gid 15010 ton \
+    && useradd --uid 31670 --gid 15010 --shell /bin/bash --create-home apptno \
+    && groupadd -r conda --gid 900 \ 
+    && usermod -aG conda,ton ${USERNAME} \
+    && usermod -aG conda apptno
+
+
+ENV PIPELINE_ROOT=${APP_HOME}/src
+ENV PIPELINE_PREDIC_OCC=/predict_occultation
+ENV PIPELINE_PATH=${PIPELINE_PREDIC_OCC}/pipeline
+ENV WORKFLOW_PATH=${PIPELINE_ROOT}
+ENV EXECUTION_PATH=${PIPELINE_ROOT}
+
+COPY --chown=${USERNAME}:ton --chmod=775 src ${PIPELINE_ROOT}
+COPY --chown=${USERNAME}:ton --chmod=775 predict_occultation ${PIPELINE_PREDIC_OCC}
+COPY --chown=${USERNAME}:ton --chmod=775 rerun.py ${APP_HOME}
+COPY --chown=${USERNAME}:ton --chmod=775 rerun.sh ${APP_HOME} 
+COPY --chown=${USERNAME}:ton --chmod=775 daemon.sh ${APP_HOME}
+COPY --chown=${USERNAME}:ton --chmod=775 run_daemon.py ${APP_HOME}
+
+RUN mv de440.bsp ${PIPELINE_PATH}/de440.bsp \
+    && mv naif0012.tls ${PIPELINE_PATH}/naif0012.tls
+
+RUN rm -rf ${PIPELINE_ROOT}/*.pyc ${PIPELINE_ROOT}/__pycache__
+RUN rm -rf ${PIPELINE_ROOT}/external_inputs/*.pyc ${PIPELINE_ROOT}/external_inputs/__pycache__
+RUN rm -rf ${PIPELINE_PATH}/*.pyc ${PIPELINE_PATH}/__pycache__
+RUN rm -rf ${PIPELINE_PREDICT_OCC}/*.pyc ${PIPELINE_PREDIC_OCC}/__pycache__
 
 USER ${USERNAME}
+WORKDIR ${APP_HOME}
 
 RUN /bin/bash --login -c "conda init bash \
-    && echo 'conda activate py3' >> /app/src/env.sh \
-    && source /app/src/env.sh"
+    && echo 'conda activate py3' >> ~/.bashrc \
+    && source ~/.bashrc"

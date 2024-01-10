@@ -9,17 +9,23 @@ services:
     network_mode: "host"
     volumes:
       # Diretório de execução dos pipelines
-      - .:/app
-      # Diretório de Logs
-      - ./log:/log
-      # - /lustre/t1/cl/ton/workflows/.ssh/:/home/app.tno/.ssh
+      - ./outputs:/app/outputs
+    #  - .:/app
+    # Diretório de Logs
+    # - ./log:/log
+    # - /lustre/t1/cl/ton/workflows/.ssh/:/home/app.tno/.ssh
     environment:
       # - DB_URI=postgresql+psycopg2://untrustedprod:untrusted@desdb4.linea.gov.br:5432/prod_gavo
       # - DB_URI_ADMIN=postgresql+psycopg2://tnouseradmindev:TnoDev405060@desdb4.linea.gov.br:5432/tnodbdev
       - DB_URI=postgresql+psycopg2://untrustedprod:untrusted@localhost:3307/prod_gavo
       - DB_URI_ADMIN=postgresql+psycopg2://tnouseradmindev:TnoDev405060@localhost:3307/tnodbdev
+      - PREDICT_OUTPUTS=/app/outputs/predict_occultation
       - USER=app.tno
       # PARSL_ENV define onde será o processamento: local ou linea (Slurm)
       - PARSL_ENV=local
+      - PREFIX_ENV=dev # local, testing or production
+      # Para o cluster devemos alterar as variaveis de ambiente:
       # - SLURM_REMOTE_DIR=/lustre/t1/cl/ton/workflows/ # somente se o processamento for no slurm
       # - SSHKEY=/lustre/t1/cl/ton/workflows/.ssh/id_rsa # # somente se o processamento precisar de conexão ssh
+      # - PIPELINE_PATH=/pipeline # path para o código do pipeline
+
