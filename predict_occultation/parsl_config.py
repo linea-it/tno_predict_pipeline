@@ -25,18 +25,17 @@ def get_config(key):
     executors = {
         "linea": HighThroughputExecutor(
             label="linea",
-            max_workers=100,  # number of cores per node
             worker_logdir_root=f'{"/".join([slurm_dir, "script_dir"])}',
             provider=SlurmProvider(
                 partition="cpu",
-                nodes_per_block=1,  # number of nodes
+                nodes_per_block=2,  # number of nodes
                 cmd_timeout=240,  # duration for which the provider will wait for a command to be invoked on a remote system
                 launcher=SrunLauncher(debug=True, overrides=""),
-                init_blocks=1,
-                min_blocks=1,
-                max_blocks=1,
+                init_blocks=2,
+                min_blocks=3,
+                max_blocks=12,
                 parallelism=1,
-                walltime='2:00:00',
+                walltime='15:00:00',
                 worker_init=f'source {"/".join([slurm_dir, "cluster.sh"])}\n',
                 channel=SSHChannel(
                     hostname="loginapl01",
