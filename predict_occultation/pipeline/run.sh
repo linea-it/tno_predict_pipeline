@@ -1,4 +1,4 @@
-#!/bin/bash --login
+#!/bin/bash
 
 _name=$1
 _start=$2
@@ -8,6 +8,10 @@ _path=$5
 _step=$6
 _leap_sec=$7
 _bsp_planetary=$8
+
+umask 0002
+
+echo 'PIPELINE_PATH: ' $PIPELINE_PATH
 
 TMPDIR=`echo $RANDOM | md5sum | head -c 5; echo;`
 export DIR_DATA=/tmp/$TMPDIR

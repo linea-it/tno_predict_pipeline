@@ -1,0 +1,33 @@
+version: "3.6"
+services:
+  tno_pipeline:
+    &pipeline
+    user: "31670:15010"
+    group_add:
+        - "900"
+    build: .
+    # command: /daemon.sh
+    command: sleep infinity
+    network_mode: "host"
+    volumes:
+      # Diretório de execução dos pipelines
+      - /lustre/t1/cl/ton/workflows/.ssh/:/home/apptno/.ssh
+      - /lustre/t1/cl/ton/workflows/pipelines/predict_occultation/:/lustre/t1/cl/ton/workflows/pipelines/predict_occultation
+      - /lustre/t1/scratch/users/app.tno/outputs/:/lustre/t1/scratch/users/app.tno/outputs
+      - /lustre/t1/scratch/users/app.tno/configs/:/lustre/t1/scratch/users/app.tno/configs
+      # - .:/app
+      # Diretório de Logs
+      # - /lustre/t1/scratch/users/app.tno/log:/log
+      # - ./log:/log
+      # - /lustre/t1/cl/ton/workflows/.ssh/:/home/app.tno/.ssh
+    environment:
+      - DB_URI=postgresql+psycopg2://untrustedprod:untrusted@desdb4.linea.gov.br:5432/prod_gavo
+      - DB_URI_ADMIN=postgresql+psycopg2://tnouseradmindev:TnoDev405060@desdb4.linea.gov.br:5432/tnodbdev
+      - USER=apptno
+      # PARSL_ENV define onde será o processamento: local ou linea (Slurm)
+      - PARSL_ENV=linea    # PARSL_ENV define onde será o processamento: local ou linea (Slurm)
+      - PIPELINE_PATH=/lustre/t1/cl/ton/workflows/pipelines/predict_occultation/pipeline # path para o código do pipeline
+      - PREDICT_OUTPUTS=/lustre/t1/scratch/users/app.tno/outputs
+      - SLURM_REMOTE_DIR=/lustre/t1/scratch/users/app.tno/configs    # somente se o processamento for no slurm
+      - SSHKEY=/home/apptno/.ssh/id_rsa    # somente se o processamento precisar de conexão ssh
+#

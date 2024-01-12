@@ -163,6 +163,8 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     bash-completion \
     nano \
     ssh \
+    vim \
+    rsync \
     wget
 
 ARG APP_HOME=/app
@@ -193,6 +195,7 @@ COPY --chown=${USERNAME}:ton --chmod=775 predict_occultation ${PIPELINE_PREDIC_O
 COPY --chown=${USERNAME}:ton --chmod=775 rerun.py ${APP_HOME}
 COPY --chown=${USERNAME}:ton --chmod=775 rerun.sh ${APP_HOME} 
 COPY --chown=${USERNAME}:ton --chmod=775 daemon.sh ${APP_HOME}
+COPY --chown=${USERNAME}:ton --chmod=775 entrypoint.sh ${APP_HOME}
 COPY --chown=${USERNAME}:ton --chmod=775 run_daemon.py ${APP_HOME}
 
 RUN chmod =2775 ${PIPELINE_ROOT}
@@ -217,3 +220,5 @@ USER ${USERNAME}
 RUN /bin/bash --login -c "conda init bash \
     && echo 'conda activate py3' >> ~/.bashrc \
     && source ~/.bashrc"
+
+ENTRYPOINT [ "./entrypoint.sh" ]

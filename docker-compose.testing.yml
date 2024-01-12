@@ -1,0 +1,30 @@
+version: "3.6"
+services:
+  tno_pipeline:
+    user: "31670:15010"
+    group_add:
+        - "900"
+    #image: linea/tno_pipeline:0001
+    build: .
+    command: /app/daemon.sh
+    # command: sleep infinity
+    network_mode: "host"
+    volumes:
+      # - ./src:/app/src
+      # Diretório de execução dos pipelines
+      - /lustre/t1/cl/ton/workflows/.ssh/:/home/apptno/.ssh
+      - /lustre/t1/scratch/users/app.tno/tno_testing/outputs/runinfo/:/app/runinfo
+      - /lustre/t1/scratch/users/app.tno/tno_testing/:/lustre/t1/scratch/users/app.tno/tno_testing
+    environment:
+      - DB_URI=postgresql+psycopg2://untrustedprod:untrusted@desdb4.linea.gov.br:5432/prod_gavo
+      - DB_URI_ADMIN=postgresql+psycopg2://tnouseradmindev:TnoDev405060@desdb4.linea.gov.br:5432/tnodbdev
+      - USER=apptno
+      - PARSL_ENV=linea    # PARSL_ENV define onde será o processamento: local ou linea (Slurm)
+      - PREFIX_ENV=testing
+      - PIPELINE_PREDIC_OCC=/lustre/t1/scratch/users/app.tno/tno_testing/predict_occ # codigo parsl + pipeline
+      - PIPELINE_PATH=/lustre/t1/scratch/users/app.tno/tno_testing/predict_occ/pipeline # path para o código do pipeline
+      - PREDICT_OUTPUTS=/lustre/t1/scratch/users/app.tno/tno_testing/outputs/predict_occ
+      - SLURM_REMOTE_DIR=/lustre/t1/scratch/users/app.tno/tno_testing/configs    # somente se o processamento for no slurm
+      - PIPE_BIN=/lustre/t1/scratch/users/app.tno/tno_testing/bin
+      - CONDA_ENVS=/lustre/t1/scratch/users/app.tno/tno_testing/miniconda/envs
+      - SSHKEY=/home/apptno/.ssh/id_rsa    # somente se o processamento precisar de conexão ssh

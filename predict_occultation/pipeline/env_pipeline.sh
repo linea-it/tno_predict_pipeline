@@ -1,4 +1,4 @@
-#!/bin/bash --login
+#!/bin/bash
 
 echo "Environment: "$PARSL_ENV
 
@@ -8,7 +8,8 @@ then
     export EUPS_USERDATA=/tmp/`whoami`/eups
     . /mnt/eups/linea_eups_setup.sh
     setup gcc 4.9.3+1
-    export PATH=$PATH:$PIPELINE_PATH/bin
+    export PATH=$PATH:/lustre/t1/scratch/users/app.tno/tno_testing/bin
+    source ${CONDAPATH}/activate
 fi
 
 conda activate py2

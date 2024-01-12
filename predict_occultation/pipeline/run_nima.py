@@ -275,73 +275,73 @@ def start_nima():
     return files
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    t0 = datetime.now()
+#     t0 = datetime.now()
 
-    # Verifica o path onde o programa está sendo executado
-    app_path = os.environ.get("APP_PATH")
-    original_cwd = os.getcwd()
-    print("Current Path: %s" % original_cwd)
+#     # Verifica o path onde o programa está sendo executado
+#     app_path = os.environ.get("APP_PATH")
+#     original_cwd = os.getcwd()
+#     print("Current Path: %s" % original_cwd)
 
-    if original_cwd != app_path:
-        print("Changing the work directory")
-        os.chdir(app_path)
-        print("Current Path: %s" % os.getcwd())
+#     if original_cwd != app_path:
+#         print("Changing the work directory")
+#         os.chdir(app_path)
+#         print("Current Path: %s" % os.getcwd())
 
-    try:
-        # Verifica se tem o parametro path,
-        # Se o parametro existir, sera criado um link simbolico entre o path e o /data
-        # desta forma o programa sempre executara considerendo o path /data.
-        parser = argparse.ArgumentParser()
-        parser.add_argument("-p", "--path", default=None, required=False, help="Path where the inputs are and where the outputs will be. must be the path as it is mounted on the volume, should be used when it is not possible to mount the volume as /data. example the inputs are in /archive/asteroids/Eris and this path is mounted inside the container the parameter --path must have this value --path /archive/asteroids/Eris, the program will create a link from this path to /data.")
-        args = parser.parse_args()
+#     try:
+#         # Verifica se tem o parametro path,
+#         # Se o parametro existir, sera criado um link simbolico entre o path e o /data
+#         # desta forma o programa sempre executara considerendo o path /data.
+#         parser = argparse.ArgumentParser()
+#         parser.add_argument("-p", "--path", default=None, required=False, help="Path where the inputs are and where the outputs will be. must be the path as it is mounted on the volume, should be used when it is not possible to mount the volume as /data. example the inputs are in /archive/asteroids/Eris and this path is mounted inside the container the parameter --path must have this value --path /archive/asteroids/Eris, the program will create a link from this path to /data.")
+#         args = parser.parse_args()
 
-        if args.path is not None and os.path.exists(os.environ.get("DIR_DATA")) is False:
-            os.symlink(args.path, os.environ.get("DIR_DATA"))
+#         if args.path is not None and os.path.exists(os.environ.get("DIR_DATA")) is False:
+#             os.symlink(args.path, os.environ.get("DIR_DATA"))
 
-        if args.path is None and os.path.exists(os.environ.get("DIR_DATA")) is False:
-            raise Exception("No data directory was found. use the volume mounting the data in the /data directory or run the run.py script with parameter --path in which case the directory passed as parameter must be a mounted volume.")
-            exit(1)
+#         if args.path is None and os.path.exists(os.environ.get("DIR_DATA")) is False:
+#             raise Exception("No data directory was found. use the volume mounting the data in the /data directory or run the run.py script with parameter --path in which case the directory passed as parameter must be a mounted volume.")
+#             exit(1)
 
-        files = start_nima()
-        # # path para arquivo de inputs.
-        # parametersFile = os.path.join(
-        #     os.environ.get("DIR_DATA"), "nima_input.txt")
+#         files = start_nima()
+#         # # path para arquivo de inputs.
+#         # parametersFile = os.path.join(
+#         #     os.environ.get("DIR_DATA"), "nima_input.txt")
 
-        # # path para arquivo de log.
-        # log_file = os.path.join(os.environ.get("DIR_DATA"), "nima.log")
+#         # # path para arquivo de log.
+#         # log_file = os.path.join(os.environ.get("DIR_DATA"), "nima.log")
 
-        # orig_stdout = sys.stdout
-        # f = open(log_file, 'w')
-        # sys.stdout = f
+#         # orig_stdout = sys.stdout
+#         # f = open(log_file, 'w')
+#         # sys.stdout = f
 
-        # start_time = datetime.now()
+#         # start_time = datetime.now()
 
-        # files = NIMAmanager(parametersFile, log_file=f)
+#         # files = NIMAmanager(parametersFile, log_file=f)
 
-        # end_time = datetime.now()
+#         # end_time = datetime.now()
 
-        # print("Duration: %s" % (end_time - start_time))
+#         # print("Duration: %s" % (end_time - start_time))
 
-        # sys.stdout = orig_stdout
-        # f.close()
-        # exit(0)
+#         # sys.stdout = orig_stdout
+#         # f.close()
+#         # exit(0)
 
-        # print("Teste")
+#         # print("Teste")
 
-    except Exception as e:
-        print(e)
-        traceback.print_exc()
+#     except Exception as e:
+#         print(e)
+#         traceback.print_exc()
 
-    finally:
+#     finally:
 
-        # Volta para o diretório original
-        os.chdir(original_cwd)
+#         # Volta para o diretório original
+#         os.chdir(original_cwd)
 
-        t1 = datetime.now()
-        td = t1 - t0
-        print("NIMA Refine Orbit Done in %s" % td)
+#         t1 = datetime.now()
+#         td = t1 - t0
+#         print("NIMA Refine Orbit Done in %s" % td)
 
-# Exemplo da execução do comando
-# docker run -it --rm --volume /home/glauber/linea/1999RB216:/home/glauber/linea/1999RB216 --volume /home/glauber/linea/praia_occultation/src/run_nima.py:/app/run_nima.py --network host -e DB_URI=postgresql+psycopg2://postgres:postgres@172.18.0.2:5432/tno_v2 linea/praiaoccultation:v2.5 python run_nima.py --path /home/glauber/linea/1999RB216
+# # Exemplo da execução do comando
+# # docker run -it --rm --volume /home/glauber/linea/1999RB216:/home/glauber/linea/1999RB216 --volume /home/glauber/linea/praia_occultation/src/run_nima.py:/app/run_nima.py --network host -e DB_URI=postgresql+psycopg2://postgres:postgres@172.18.0.2:5432/tno_v2 linea/praiaoccultation:v2.5 python run_nima.py --path /home/glauber/linea/1999RB216
