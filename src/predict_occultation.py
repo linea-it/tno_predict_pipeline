@@ -380,7 +380,9 @@ def update_progress_status(
     t1 = datetime.now(tz=timezone.utc)
     tdelta = t1 - t0
     tdelta = tdelta.total_seconds()
-    average_time = tdelta / count
+    average_time = 0
+    if count > 0:
+        average_time = tdelta / count
     time_estimate = tdelta * (count - current)
 
     tasks = ["Data acquisition and preparation", "Refine Orbit and Predict Occultation"]
@@ -682,6 +684,7 @@ def submit_tasks(jobid: int):
             # caso FORCE_REFRESH_INPUTS = TRUE os inputs também serão removidos
             a.remove_previus_results(remove_inputs=FORCE_REFRESH_INPUTS)
 
+            # ========================= Download dos Inputs Externos ============================
             # Observações do DES ----------------------------------
             # Se o objeto não tiver observações no DES
             # ele pode ser executado normalmente mas
@@ -691,7 +694,6 @@ def submit_tasks(jobid: int):
             )
             # have_des_obs = True
 
-            # ========================= Download dos Inputs Externos ============================
             # BSP JPL -------------------------------------------------------
             # Caso HAJA posições para o DES o BSP precisará ter um periodo inicial que contenham o periodo do DES
             # Para isso basta deixar o bsp_start_date = None e o periodo será setado na hora do download.
@@ -748,6 +750,8 @@ def submit_tasks(jobid: int):
                 step1_failures += 1
                 # Ignora as proximas etapas para este asteroid.
                 continue
+
+
 
             step1_success += 1
             current_idx += 1
@@ -1120,9 +1124,9 @@ def complete_job(job, log, status):
 
     # Calc average time by asteroid
     avg_exec_time_asteroid = 0
-    if job.get("count_asteroids") > 0:
+    if count_success > 0:
         avg_exec_time_asteroid = int(
-            tdelta.total_seconds() / job.get("count_asteroids")
+            tdelta.total_seconds() / count_success
         )
 
     # Status 3 = Completed

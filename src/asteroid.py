@@ -1063,8 +1063,9 @@ class Asteroid:
 
             if self.des_observations:
                 if "message" in self.des_observations:
-                    self.messages.append(self.des_observations["message"])
+                    # self.messages.append(self.des_observations["message"])
                     # self.set_failure()
+                    pass
                 else:
                     a.update(
                         {
