@@ -10,7 +10,7 @@ services:
     volumes:
       - _BASEDIR/.ssh/:/home/apptno/.ssh
       - _BASEDIR/outputs/runinfo/:/app/runinfo
-      - _BASEDIR/:$BASEDIR
+      - _BASEDIR/:_BASEDIR
     environment:
       - DB_URI=postgresql+psycopg2://untrustedprod:untrusted@desdb4.linea.gov.br:5432/prod_gavo
       - DB_URI_ADMIN=postgresql+psycopg2://tnouseradmindev:TnoDev405060@desdb4.linea.gov.br:5432/tnodbdev
