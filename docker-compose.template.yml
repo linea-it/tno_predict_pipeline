@@ -1,0 +1,26 @@
+version: "3.6"
+services:
+  tno_pipeline:
+    user: "_UID:_GID"
+    group_add:
+      - "900"
+    image: linea/tno_pipeline:_VERSION
+    command: /app/daemon.sh
+    network_mode: "host"
+    volumes:
+      - _BASEDIR/.ssh/:/home/apptno/.ssh
+      - _BASEDIR/outputs/runinfo/:/app/runinfo
+      - _BASEDIR/:$BASEDIR
+    environment:
+      - DB_URI=postgresql+psycopg2://untrustedprod:untrusted@desdb4.linea.gov.br:5432/prod_gavo
+      - DB_URI_ADMIN=postgresql+psycopg2://tnouseradmindev:TnoDev405060@desdb4.linea.gov.br:5432/tnodbdev
+      - USER=apptno
+      - PARSL_ENV=linea
+      - PREFIX_ENV=testing
+      - PIPELINE_PREDIC_OCC=_BASEDIR/predict_occ # codigo parsl + pipeline
+      - PIPELINE_PATH=_BASEDIR/predict_occ/pipeline # path para o código do pipeline
+      - PREDICT_OUTPUTS=_BASEDIR/outputs/predict_occ
+      - SLURM_REMOTE_DIR=_BASEDIR/configs # somente se o processamento for no slurm
+      - PIPE_BIN=_BASEDIR/bin
+      - CONDA_ENVS=_BASEDIR/miniconda/envs
+      - SSHKEY=/home/apptno/.ssh/id_rsa # somente se o processamento precisar de conexão ssh
